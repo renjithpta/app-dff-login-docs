@@ -15,6 +15,8 @@ Architecture documents, security reviews, diagrams and supporting artifacts for 
 
 These are separate document editions with different scope and depth. Read the diagrams with the document in the same folder; do not combine routing or policy assumptions from different editions without an architecture review. Proposed controls and verification procedures are not evidence that an implementation has passed security or runtime testing.
 
+**API URL standard:** [canonical endpoints, HTTP semantics, migration and verification](docs/api-standards.md) · [PDF](docs/api-standards.pdf).
+
 ## Diagrams and editable sources
 
 - [Centralized SSO PNG diagrams](docs/centralized-sso/images): seven images at 3,408 pixels wide.

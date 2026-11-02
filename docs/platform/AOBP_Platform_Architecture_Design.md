@@ -1,5 +1,7 @@
 # AOBP Platform
 
+**API contract:** [AOBP API URL and HTTP standard](../api-standards.md). Application-owned endpoints in this edition use that convention; OAuth/OIDC and private vendor integration endpoints retain their documented protocol contracts. Local-only logout uses `DELETE /bff/api/v1/session` (204); SSO logout orchestration uses `POST /bff/api/v1/logout-requests` (200 result, optional approved redirect).
+
 Architecture, API and Engineering Specification
 
 Version: 2.3 - Reviewed BFF placement, SSO request journeys and EKS security specification, 2 November 2026
@@ -237,11 +239,11 @@ All browser examples use `https://aobp.example.com`. Frontend images are deploye
 |---|---|---|---|
 | aobp.example.com / and shell assets | UI static target | Not traversed | Asset pipeline; no operational secrets |
 | aobp.example.com /mfes/** | Independent remote static target | Not traversed | Immutable remote assets and manifest governance |
-| aobp.example.com /bff/api/** | Gateway | BFF REST | BFF session/CSRF; downstream resource authorization |
-| aobp.example.com /bff/ws/v1 | Gateway | BFF WebSocket endpoint | Session, Origin and authorized messages/subscriptions |
+| aobp.example.com /bff/api/v1/** | Gateway | BFF REST | BFF session/CSRF; downstream resource authorization |
+| aobp.example.com /bff/ws/v1/events | Gateway | BFF WebSocket endpoint | Session, Origin and authorized messages/subscriptions |
 | aobp.example.com /oauth2/authorization/keycloak | Gateway | BFF login initiation | BFF creates state, nonce and PKCE transaction |
 | aobp.example.com /login/oauth2/code/keycloak | Gateway | BFF callback | BFF checks correlation and exchanges code |
-| aobp.example.com /bff/logout | Gateway | BFF logout | CSRF-protected POST |
+| aobp.example.com /bff/api/v1/logout-requests | Gateway | BFF logout | CSRF-protected POST |
 | aobp.example.com /bff/oidc/backchannel-logout | Gateway; IdP-restricted where feasible | BFF logout-token receiver | Signed OIDC logout token; no browser session requirement |
 | aobp.example.com /api/** | Reject | No browser bypass route | Gateway/edge deny |
 | api.example.com /api/v1/flights/** | Partner gateway target | Flight API | Client credentials token; gateway + API validation |
@@ -283,8 +285,8 @@ The BFF is an allowlisted application adapter, not an open proxy. The caller can
 | GET /bff/api/v1/flights | Flight API: /api/v1/flights | Server-held access token in Authorization header |
 | PATCH /bff/api/v1/flights/{id}/operational-times | Flight API: same resource under /api/v1 | Server-held access token; validated If-Match |
 | GET /bff/api/v1/tasks | Workflow API: /api/v1/tasks | Server-held access token for the approved audience |
-| GET /bff/api/v1/session | Handled by BFF | No downstream API token returned |
-| POST /bff/logout | Handled by BFF; approved IdP back channel if configured | BFF-held credentials only |
+| GET/DELETE /bff/api/v1/session | Handled by BFF | No downstream API token returned |
+| POST /bff/api/v1/logout-requests | Handled by BFF; approved IdP back channel if configured | BFF-held credentials only |
 
 Apply object-ID and path validation before building an outbound URI. Never concatenate an unvalidated suffix into a destination. Rate limits after session validation use a trusted subject/session reference; pre-login limits use bounded network/route controls.
 
@@ -355,7 +357,7 @@ Use the stronger `__Host-Http-` cookie prefix where the supported browser matrix
 
 Set initial idle timeout to 30 minutes and absolute session lifetime to 8 hours, bounded by the IdP/refresh-token lifetime. These are AOBP proposals, not industry constants. A cookie can outlive its server record; the server always decides validity. Refresh, WebSocket heartbeats and background polling must not reset the absolute lifetime; define which genuine user activity extends idle time.
 
-Expose `GET /bff/api/v1/csrf` as a no-store, same-origin CSRF bootstrap bound to the session. React sends the returned token in `X-CSRF-TOKEN` for POST/PATCH/PUT/DELETE, including logout. Keep CSRF protection enabled, validate exact Origin where applicable, and refresh the CSRF token after login/logout rotation. Use the supported Spring Security SPA integration for the selected version, including its deferred/masked-token behavior. No wildcard credentialed CORS; normal same-origin requests need none.
+Expose `GET /bff/api/v1/csrf-token` as a no-store, same-origin CSRF bootstrap bound to the session. React sends the returned token in `X-CSRF-TOKEN` for POST/PATCH/PUT/DELETE, including logout. Keep CSRF protection enabled, validate exact Origin where applicable, and refresh the CSRF token after login/logout rotation. Use the supported Spring Security SPA integration for the selected version, including its deferred/masked-token behavior. No wildcard credentialed CORS; normal same-origin requests need none.
 
 ### Step 6 - Process an authenticated business request
 
@@ -451,7 +453,7 @@ A downstream 401 does not always mean expiry: issuer, audience or signature may 
 
 ### Step 10 - Logout, disablement and revocation
 
-React submits CSRF-protected `POST /bff/logout`. BFF deletes the session and authorized-client state, clears the cookie, publishes a cross-replica socket-close/revocation notification and invokes supported IdP revocation/logout. Navigate the browser through approved end-session redirects if corporate SSO logout is intended. Define 'log out of AOBP' separately from 'log out of all BAC applications'.
+React submits CSRF-protected `POST /bff/api/v1/logout-requests`. BFF deletes the session and authorized-client state, clears the cookie, publishes a cross-replica socket-close/revocation notification and invokes supported IdP revocation/logout. Navigate the browser through approved end-session redirects if corporate SSO logout is intended. Define 'log out of AOBP' separately from 'log out of all BAC applications'.
 
 Expose a dedicated POST receiver at `/bff/oidc/backchannel-logout`, registered exactly with the IdP. Gateway permits only that method and bounded form size; restrict network sources where feasible. This protocol endpoint is exempt only from browser CSRF/session requirements because it authenticates the signed logout token. It is not a general CSRF exclusion for `/bff/**`. Validate signature, issuer, audience, issued-at, required logout event, and sid or subject; reject a nonce claim and deduplicate replay using the logout token jti for its validity window. Persist the invalidation before acknowledging successful processing, and test IdP retry behavior.
 
@@ -520,7 +522,7 @@ Authorization management availability affects policy refresh, not every business
 
 ## 8. WebSocket flow and scaling
 
-Browser connects to `wss://aobp.example.com/bff/ws/v1` after login. The gateway proxies the upgrade; BFF authenticates the HTTP principal, validates Origin, and associates the connection with the session. With Spring STOMP security, send CSRF in CONNECT and authorize destinations/messages. Native WebSocket requires equivalent application controls.
+Browser connects to `wss://aobp.example.com/bff/ws/v1/events` after login. The gateway proxies the upgrade; BFF authenticates the HTTP principal, validates Origin, and associates the connection with the session. With Spring STOMP security, send CSRF in CONNECT and authorize destinations/messages. Native WebSocket requires equivalent application controls.
 
 On `SUBSCRIBE`, authorize the topic/resource against current scope. On event delivery, ensure recipients remain entitled, including role changes and changes to a flight's terminal/airline. Never broadcast all airport events and rely on React to hide them. Client-supplied destinations are not authorization evidence.
 
@@ -542,7 +544,7 @@ The rules in this chapter are AOBP platform conventions. They adopt HTTP, JSON, 
 |---|---|---|
 | Browser BFF API | `/bff/api/v{major}/{resources}` | `/bff/api/v1/flights` |
 | Domain API, private or partner | `/api/v{major}/{resources}` | `/api/v1/flights` |
-| Browser native WebSocket endpoint | `/bff/ws/v{major}` | `/bff/ws/v1` |
+| Browser native WebSocket endpoint | `/bff/ws/v{major}/events` | `/bff/ws/v1/events` |
 | BFF framework login endpoints | Framework-defined stable routes | `/oauth2/authorization/keycloak` |
 | BFF framework callback | Exact registered redirect URI | `/login/oauth2/code/keycloak` |
 | Health and telemetry | Private management endpoints | `/actuator/health/readiness`, `/actuator/prometheus` |
@@ -550,7 +552,7 @@ The rules in this chapter are AOBP platform conventions. They adopt HTTP, JSON, 
 
 Hostnames differ by environment; path contracts do not. Use `https://aobp.example.com` as the illustrative browser origin and `https://identity.example.com` as the issuer host. Partner APIs may use `https://api.example.com` while preserving `/api/v1/...`. Internal DNS names and ports never appear in browser contracts.
 
-Paths MUST use lowercase plural resource nouns and kebab-case for compound segments. JSON/query/property names MUST use lowerCamelCase. OpenAPI path parameters use `{flightId}`; runtime requests contain an actual identifier, not braces. Avoid trailing slashes and ambiguous alternate spellings. IDs are opaque, immutable, non-PII references: a flight number plus date is not a reliable unique flight identifier. UUID is the reference representation; choose the UUID generation variant during implementation.
+Collection paths MUST use lowercase plural resource nouns and kebab-case for compound segments. Singleton resources such as `session` and `csrf-token` deliberately use singular names. OAuth/OIDC protocol routes are governed by their framework/provider contract. JSON/query/property names MUST use lowerCamelCase. OpenAPI path parameters use `{flightId}`; runtime requests contain an actual identifier, not braces. Avoid trailing slashes and ambiguous alternate spellings. IDs are opaque, immutable, non-PII references: a flight number plus date is not a reliable unique flight identifier. UUID is the reference representation; choose the UUID generation variant during implementation.
 
 Do not include a service framework, deployment location, user identity, password, bearer token or action verb such as `getFlights` in the URI. Scope is enforced from trusted identity and resource data; a path airportId is not evidence of access. Keep nesting shallow and use nested paths only where ownership is real. URI versions identify breaking API contracts, not application releases. Additive compatible changes stay in v1; breaking changes need a new major contract and coexistence/migration plan.
 

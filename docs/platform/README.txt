@@ -1,21 +1,13 @@
-AOBP Platform Architecture - version 2.3
-2 November 2026
+AOBP Platform Architecture
 
-Start with AOBP_Platform_Architecture_Design.pdf for the formatted document.
-The Markdown file is the editable source. Keep assets/ alongside it so its
-seven relative PNG image links resolve. PDF narrative pages are A4; diagram
-plates use A3 landscape for readable printed labels and high-resolution zoom.
+The Markdown is the editable source; keep assets/ alongside it. This edition
+uses the shared API convention in ../api-standards.md. The PDF is rebuilt from
+the Markdown on US Letter pages; diagrams are high-resolution PNGs.
 
-The 23 original main sections are retained. The selected browser business
-route is ALB -> Spring Cloud API Gateway -> Spring Boot BFF -> private APIs.
-Static assets and machine integrations have distinct documented routes.
-Proposed sizes, lifetimes and recovery choices require implementation testing.
-This package is an architecture specification, not runnable application code.
+Run tools/build_diagrams.py and tools/build_pdfs.py from a full repository
+checkout. The scripts/ files are compatibility entry points to those tools.
+Dependencies: Python 3, ReportLab, PyMuPDF, Pillow and DejaVu Sans fonts.
 
-assets/ contains seven PNG diagrams, each 3200 pixels wide.
-scripts/ contains diagram and PDF authoring sources. To regenerate, run from
-this directory with Python, Pillow, ReportLab and DejaVu Sans fonts installed:
-  python3 scripts/diagrams.py
-  python3 scripts/build_pdf.py
-The scripts expect deliverables under output/ in the authoring workspace;
-place the Markdown and assets in output/ when reproducing the build.
+This package is a design specification, not runnable application code.
+Changes to paths require coordinated client, routing, security and API
+implementation updates before deployment.

@@ -1,5 +1,7 @@
 # AOBP Centralized SSO Authentication and Authorization with BFF
 
+**API contract:** [AOBP API URL and HTTP standard](../api-standards.md). Application-owned endpoints in this edition use that convention; OAuth/OIDC and private vendor integration endpoints retain their documented protocol contracts. Local-only logout uses `DELETE /bff/api/v1/session` (204); SSO logout orchestration uses `POST /bff/api/v1/logout-requests` (200 result, optional approved redirect).
+
 Architecture overview and implementation approach
 
 React microfrontends · Spring Boot BFF · Redis · Microservices
@@ -59,8 +61,8 @@ The design retains the reference architecture's separation between identity inte
 | --- | --- |
 | UI document and approved MFE assets | Public edge to separately deployed UI services |
 | /oauth2/** and /login/oauth2/code/** | Public edge to BFF; exact login and callback allowlist |
-| /bff/session, /bff/csrf, /bff/logout | Public edge to BFF; session contract |
-| /bff/api/microservice-1/** or microservice-2/** | Public edge to BFF; fixed operation allowlist |
+| GET/DELETE /bff/api/v1/session; GET /bff/api/v1/csrf-token; POST /bff/api/v1/logout-requests | Public edge to BFF; session contract |
+| /bff/api/v1/microservice-1/** or /bff/api/v1/microservice-2/** | Public edge to BFF; fixed operation allowlist |
 | Internal bearer API routes | BFF to selected microservice directly; no public API ingress |
 
 In AWS EKS, a public HTTPS ALB with WAF targets approved public-edge pods. BFF and microservices use internal ClusterIP Services in private subnets. A private gateway is optional for justified routing, quotas or protocol controls; it is not required for RBAC and is not on the default BFF-to-service path. Enforce this topology with security groups and an enabled network-policy implementation; a ClusterIP address alone is not access control.
@@ -156,7 +158,7 @@ The browser begins the login flow; the BFF completes the protocol and stores the
 
 ### Runtime sequence
 
-1. The UI calls **GET /bff/session**. If it receives 401, it displays Sign in and navigates to the login initiation endpoint when the user chooses it.
+1. The UI calls **GET /bff/api/v1/session**. If it receives 401, it displays Sign in and navigates to the login initiation endpoint when the user chooses it.
 
 2. The BFF creates state, nonce and a PKCE verifier/challenge. It saves the pending authorization request in shared session storage and redirects the browser to the configured provider.
 
@@ -166,7 +168,7 @@ The browser begins the login flow; the BFF completes the protocol and stores the
 
 5. The browser receives an HttpOnly, Secure, host-only **AOBPSESSION** cookie. Use SameSite=Lax for this top-level GET callback design, a 30-minute inactivity limit and an explicitly enforced absolute lifetime, initially eight hours.
 
-6. GET /bff/session returns display information and UI capabilities with Cache-Control: no-store. It returns no OAuth tokens. Production UI code never reads the session cookie.
+6. GET /bff/api/v1/session returns display information and UI capabilities with Cache-Control: no-store. It returns no OAuth tokens. Production UI code never reads the session cookie.
 
 ## 5. Token Relay to Microservices
 
@@ -186,7 +188,7 @@ The resource scope is read from authoritative data. The service evaluates RBAC a
 
 ```http
 Browser -> Gateway -> BFF
-GET /bff/api/microservice-1/v1/resources/resource-123
+GET /bff/api/v1/microservice-1/resources/resource-123
 Cookie: AOBPSESSION=<opaque-session-id>
 ```
 
@@ -422,13 +424,13 @@ The BFF returns only a server-generated, allowlisted provider logout URL. Local 
 
 All microfrontends call relative BFF URLs through a shared frontend API module. Independently deployed assets can be served through the common origin; that does not require embedding OAuth credentials in each remote.
 
-GET /bff/csrf supplies a session-bound CSRF token and header name. POST, PUT, PATCH and DELETE require that header in addition to the cookie. Obtain a fresh CSRF token after authentication or logout. Keep credentialed cross-origin access disabled unless an explicit origin contract is needed; CORS and SameSite do not replace CSRF validation.
+GET /bff/api/v1/csrf-token supplies a session-bound CSRF token and header name. POST, PUT, PATCH and DELETE require that header in addition to the cookie. Obtain a fresh CSRF token after authentication or logout. Keep credentialed cross-origin access disabled unless an explicit origin contract is needed; CORS and SameSite do not replace CSRF validation.
 
 HttpOnly prevents JavaScript reading the session cookie, but injected script can still submit authorized requests. Apply CSP, output encoding, dependency controls and trusted MFE release/manifest governance. A compromised remote runs with the shell's browser privileges.
 
 ### Logout sequence
 
-1. The UI sends a CSRF-protected POST to /bff/logout. Do not log out by an unprotected state-changing GET.
+1. The UI sends a CSRF-protected POST to /bff/api/v1/logout-requests. Do not log out by an unprotected state-changing GET.
 
 2. The handling replica invalidates the shared session, removes authorized-client tokens and clears the cookie. All replicas must stop accepting that session; do not retain permissive local caches.
 
@@ -436,7 +438,7 @@ HttpOnly prevents JavaScript reading the session cookie, but injected script can
 
 4. For provider-initiated logout, validate back-channel logout tokens and use issuer plus sid/subject indexes to find and invalidate the appropriate sessions. Reject replayed or invalid logout events.
 
-5. Verify GET /bff/session returns 401 and that the old session cannot execute a mutation through either BFF replica.
+5. Verify GET /bff/api/v1/session returns 401 and that the old session cannot execute a mutation through either BFF replica.
 
 ### Access token validity after logout
 

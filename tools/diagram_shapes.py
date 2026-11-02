@@ -84,7 +84,7 @@ class Graph(Flowable):
     (3,3,'5  JWT and local RBAC'),(3,4,'6  Read resource scope'),(4,3,'7  Scope and version'),
     (3,3,'8  Resource ABAC'),(3,4,'9  Authorized commit'),(3,0,'10  Response via edge')]),
    'logout':(['Browser','BFF replica','Redis','Identity Provider'],[
-    (0,1,'1  POST logout and CSRF'),(1,2,'2  Invalidate shared session'),(1,2,'3  Delete token record'),
+    (0,1,'1  Create logout request + CSRF'),(1,2,'2  Invalidate shared session'),(1,2,'3  Delete token record'),
     (1,0,'4  Clear cookie; return logout URL'),(0,3,'5  Top-level OIDC logout'),(3,0,'6  Return to registered UI'),
     (0,1,'7  GET session'),(1,0,'8  401 unauthenticated')])}
   labels,steps=configs[kind];n=len(labels);xs=[48+i*(416/(n-1)) for i in range(n)]

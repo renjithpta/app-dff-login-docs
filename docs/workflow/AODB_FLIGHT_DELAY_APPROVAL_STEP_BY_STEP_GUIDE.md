@@ -1,5 +1,7 @@
 # AODB Flight Delay Routing and Approval — Step-by-Step Guide
 
+**API contract:** [AOBP API URL and HTTP standard](../api-standards.md). Application-owned endpoints in this edition use that convention; OAuth/OIDC and private vendor integration endpoints retain their documented protocol contracts.
+
 This guide creates one small AODB workflow and demonstrates its two useful
 operational cases:
 
@@ -100,8 +102,8 @@ Configure the edge routes in this order:
 | --- | --- | --- |
 | `/oauth2/authorization/aodb` | BFF | Start interactive login |
 | `/login/oauth2/code/aodb` | BFF | Handle the OIDC callback |
-| `/bff/session`, `/bff/csrf`, `/bff/logout` | BFF | Manage the browser security session |
-| `/bff/api/runtime/**` | BFF | Apply session/CSRF checks and relay to the runtime |
+| `/bff/api/v1/session`, `/bff/api/v1/csrf-token`, `/bff/api/v1/logout-requests` | BFF | Manage the browser security session |
+| `/bff/api/v1/runtime/**` | BFF | Apply session/CSRF checks and relay to the runtime |
 | UI and approved MFE asset paths | UI applications | Serve the shell and independently deployed assets |
 
 Do not expose the runtime `/api/runtime/**` routes directly to browsers.
@@ -112,14 +114,12 @@ does not intercept the callback or logout request.
 For example, the BFF translates:
 
 ```text
-POST /bff/api/runtime/workflows/aodbFlightDelayApprovalWorkflow/start
+POST /bff/api/v1/runtime/workflows/aodbFlightDelayApprovalWorkflow/instances
   → POST {configured-runtime-base}/api/runtime/workflows/aodbFlightDelayApprovalWorkflow/start
 ```
 
 The BFF uses a fixed method/path allowlist; it is not a general URL proxy.
-These paths retain the original runtime API naming to limit integration
-changes. If versioning is introduced later, version and migrate the published
-contract explicitly rather than mixing `/v1` and unversioned examples.
+The browser contract is versioned. The private `/api/runtime/**` target is an existing runtime integration contract, not the recommended naming for new domain APIs. The BFF adapter preserves that target and its payload schema. See [the API standard](../api-standards.md) for the canonical public resource routes and the required adapter mappings. These documentation changes require coordinated implementation and verification before deployment.
 
 ### 0.3. Create the Keycloak Client
 
@@ -234,9 +234,10 @@ Implement these explicit BFF endpoints:
 
 | Endpoint | Expected contract |
 | --- | --- |
-| `GET /bff/session` | `200` with display identity and UI capabilities; `401` without an authenticated session; never return OAuth tokens |
-| `GET /bff/csrf` | `200` with `{ "headerName": "X-CSRF-TOKEN", "token": "..." }` tied to the current session |
-| `POST /bff/logout` | Validate CSRF, invalidate local session and authorized-client records, and return `{ "redirectUrl": "..." }` for a server-generated, allowlisted OIDC logout URL |
+| `GET /bff/api/v1/session` | `200` with display identity and UI capabilities; `401` without an authenticated session; never return OAuth tokens |
+| `GET /bff/api/v1/csrf-token` | `200` with `{ "headerName": "X-CSRF-TOKEN", "token": "..." }` tied to the current session |
+| `DELETE /bff/api/v1/session` | CSRF-protected local application logout; `204` with no body |
+| `POST /bff/api/v1/logout-requests` | Validate CSRF, invalidate local session and authorized-client records, and return `{ "redirectUrl": "..." }` for a server-generated, allowlisted OIDC logout URL when SSO logout is configured and context is available; otherwise return a completed result without redirectUrl |
 
 Apply `Cache-Control: no-store` to these responses and authenticated workflow
 responses. CSRF tokens are allowed in frontend memory; access and refresh tokens
@@ -269,7 +270,7 @@ appropriate. Do not automatically replay a start or approval POST after login.
 
 ```javascript
 var aodbApi = async function (path, options = {}) {
-  if (!path.startsWith('/bff/api/runtime/')) {
+  if (!path.startsWith('/bff/api/v1/runtime/')) {
     throw new Error('Only the documented same-origin runtime routes are allowed');
   }
   var method = (options.method || 'GET').toUpperCase();
@@ -277,7 +278,7 @@ var aodbApi = async function (path, options = {}) {
   if (options.body !== undefined) headers.set('Content-Type', 'application/json');
 
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-    var csrfResponse = await fetch('/bff/csrf', {
+    var csrfResponse = await fetch('/bff/api/v1/csrf-token', {
       credentials: 'same-origin', cache: 'no-store', redirect: 'error'
     });
     if (!csrfResponse.ok) throw new Error('CSRF/session initialization failed');
@@ -302,7 +303,7 @@ var aodbApi = async function (path, options = {}) {
   return body;
 };
 
-var sessionResponse = await fetch('/bff/session', {
+var sessionResponse = await fetch('/bff/api/v1/session', {
   credentials: 'same-origin', cache: 'no-store', redirect: 'error'
 });
 if (!sessionResponse.ok) throw new Error('Sign in before continuing');
@@ -312,11 +313,11 @@ var runId = crypto.randomUUID();
 
 Expected checks:
 
-- `/bff/session` returns the signed-in display identity without tokens;
+- `/bff/api/v1/session` returns the signed-in display identity without tokens;
 - the session cookie is HttpOnly;
 - no OAuth token appears in localStorage, sessionStorage, an API response,
   or the MFE configuration; and
-- all runtime calls use the `/bff/api/runtime/` prefix on the application origin.
+- all runtime calls use the `/bff/api/v1/runtime/` prefix on the application origin.
 
 The console is only a reproducible demonstration client. Production buttons
 call the same BFF contract through a shared frontend API module. The examples
@@ -561,7 +562,7 @@ Run in the authenticated browser console from Step 0.6:
 
 ```javascript
 var normalResponse = await aodbApi(
-  '/bff/api/runtime/workflows/aodbFlightDelayApprovalWorkflow/start', {
+  '/bff/api/v1/runtime/workflows/aodbFlightDelayApprovalWorkflow/instances', {
     method: 'POST',
     body: {
       businessKey: 'AI302-20261029-NORMAL-' + runId,
@@ -595,7 +596,7 @@ Verify that no task was created:
 
 ```javascript
 var normalTasks = await aodbApi(
-  '/bff/api/runtime/instances/' + encodeURIComponent(normalProcessId) + '/tasks'
+  '/bff/api/v1/runtime/instances/' + encodeURIComponent(normalProcessId) + '/tasks'
 );
 console.log(normalTasks);
 ```
@@ -610,7 +611,7 @@ Verify the completed route:
 
 ```javascript
 var normalHistory = await aodbApi(
-  '/bff/api/runtime/instances/' + encodeURIComponent(normalProcessId) + '/history'
+  '/bff/api/v1/runtime/instances/' + encodeURIComponent(normalProcessId) + '/history'
 );
 console.log(normalHistory);
 console.assert(normalHistory.businessKey === normalResponse.businessKey);
@@ -648,7 +649,7 @@ Run:
 
 ```javascript
 var majorResponse = await aodbApi(
-  '/bff/api/runtime/workflows/aodbFlightDelayApprovalWorkflow/start', {
+  '/bff/api/v1/runtime/workflows/aodbFlightDelayApprovalWorkflow/instances', {
     method: 'POST',
     body: {
       businessKey: 'AI302-20261029-MAJOR-' + runId,
@@ -669,7 +670,7 @@ Find the waiting task:
 
 ```javascript
 var majorTasks = await aodbApi(
-  '/bff/api/runtime/instances/' + encodeURIComponent(majorProcessId) + '/tasks'
+  '/bff/api/v1/runtime/instances/' + encodeURIComponent(majorProcessId) + '/tasks'
 );
 console.log(majorTasks);
 var majorTask = majorTasks.find(t => t.name === 'Approve Major Flight Delay');
@@ -691,7 +692,7 @@ Inspect the process variables while the task is waiting:
 
 ```javascript
 var majorVariables = await aodbApi(
-  '/bff/api/runtime/instances/' + encodeURIComponent(majorProcessId) + '/variables'
+  '/bff/api/v1/runtime/instances/' + encodeURIComponent(majorProcessId) + '/variables'
 );
 console.log(majorVariables);
 ```
@@ -721,7 +722,7 @@ Confirm that the current browser session belongs to the identity mapped to
 
 ```javascript
 var approvalResponse = await aodbApi(
-  '/bff/api/runtime/tasks/' + encodeURIComponent(majorTaskId) + '/complete', {
+  '/bff/api/v1/runtime/tasks/' + encodeURIComponent(majorTaskId) + '/completions', {
     method: 'POST',
     body: {
       approved: true,
@@ -749,7 +750,7 @@ Verify the final history:
 
 ```javascript
 var majorHistory = await aodbApi(
-  '/bff/api/runtime/instances/' + encodeURIComponent(majorProcessId) + '/history'
+  '/bff/api/v1/runtime/instances/' + encodeURIComponent(majorProcessId) + '/history'
 );
 console.log({
   businessKey: majorHistory.businessKey,
@@ -795,7 +796,7 @@ with a new business key:
 
 ```javascript
 var rejectResponse = await aodbApi(
-  '/bff/api/runtime/workflows/aodbFlightDelayApprovalWorkflow/start', {
+  '/bff/api/v1/runtime/workflows/aodbFlightDelayApprovalWorkflow/instances', {
     method: 'POST',
     body: {
       businessKey: 'AI302-20261029-MAJOR-REJECT-' + runId,
@@ -810,7 +811,7 @@ var rejectResponse = await aodbApi(
 var rejectProcessId = rejectResponse.processInstanceId;
 if (!rejectProcessId) throw new Error('Missing processInstanceId');
 var rejectTasks = await aodbApi(
-  '/bff/api/runtime/instances/' + encodeURIComponent(rejectProcessId) + '/tasks'
+  '/bff/api/v1/runtime/instances/' + encodeURIComponent(rejectProcessId) + '/tasks'
 );
 var rejectTask = rejectTasks.find(t => t.name === 'Approve Major Flight Delay');
 if (rejectTasks.length !== 1 || !rejectTask?.taskId) {
@@ -823,7 +824,7 @@ Reject the new task:
 
 ```javascript
 console.log(await aodbApi(
-  '/bff/api/runtime/tasks/' + encodeURIComponent(rejectTaskId) + '/complete', {
+  '/bff/api/v1/runtime/tasks/' + encodeURIComponent(rejectTaskId) + '/completions', {
     method: 'POST',
     body: {
       approved: false,
@@ -838,7 +839,7 @@ Verify the final history:
 
 ```javascript
 var rejectHistory = await aodbApi(
-  '/bff/api/runtime/instances/' + encodeURIComponent(rejectProcessId) + '/history'
+  '/bff/api/v1/runtime/instances/' + encodeURIComponent(rejectProcessId) + '/history'
 );
 console.log({
   businessKey: rejectHistory.businessKey,
@@ -965,7 +966,7 @@ BPMN database action and does not prescribe a database migration.
 3. Run:
 
 ```javascript
-var anonymous = await fetch('/bff/api/runtime/instances/example/tasks', {
+var anonymous = await fetch('/bff/api/v1/runtime/instances/example/tasks', {
   credentials: 'same-origin', redirect: 'error'
 });
 console.log(anonymous.status, await anonymous.json());
@@ -980,7 +981,7 @@ In the signed-in Operations browser, run:
 
 ```javascript
 var missingCsrf = await fetch(
-  '/bff/api/runtime/workflows/aodbFlightDelayApprovalWorkflow/start', {
+  '/bff/api/v1/runtime/workflows/aodbFlightDelayApprovalWorkflow/instances', {
     method: 'POST', credentials: 'same-origin', redirect: 'error',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -1080,13 +1081,13 @@ choice; do not claim every JWT validation makes a live Keycloak call.
 Use the UI **Sign out** action. Its implementation must perform this sequence:
 
 1. Obtain the current CSRF token.
-2. POST to `/bff/logout` with the session cookie and CSRF header.
+2. POST to `/bff/api/v1/logout-requests` with the session cookie and CSRF header.
 3. Invalidate the local session and remove its authorized-client/token records.
 4. Return a server-generated, allowlisted OIDC logout URL, with
    `Cache-Control: no-store`, rather than accepting a browser-provided URL.
 5. Navigate the top-level browser to that URL to end the Keycloak SSO session.
 6. Return to the registered post-logout page.
-7. Call `/bff/session` again. Expect `401`.
+7. Call `/bff/api/v1/session` again. Expect `401`.
 8. Verify that the old BFF session cannot read or complete tasks.
 
 Local logout takes effect even if Keycloak logout fails. Display an appropriate
@@ -1124,7 +1125,7 @@ Use RFC 9457 `application/problem+json` for BFF and runtime errors:
   "title": "Task is no longer actionable",
   "status": 409,
   "detail": "Refresh the task list before submitting another decision.",
-  "instance": "/bff/api/runtime/tasks/example-task-id/complete",
+  "instance": "/bff/api/v1/runtime/tasks/example-task-id/completions",
   "code": "TASK_NOT_ACTIONABLE",
   "requestId": "generated-request-id"
 }
@@ -1163,7 +1164,7 @@ An example technical log is:
   "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
   "spanId": "00f067aa0ba902b7",
   "method": "POST",
-  "route": "/bff/api/runtime/tasks/{taskId}/complete",
+  "route": "/bff/api/v1/runtime/tasks/{taskId}/completions",
   "status": 200,
   "durationMs": 84
 }

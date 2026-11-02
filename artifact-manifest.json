@@ -13,28 +13,38 @@
     },
     {
       "path": "README.md",
-      "bytes": 4695,
-      "sha256": "52d22595eaac4f0d24758077f9c2916f8cdf458ad0669b3051ad2e7aacaf377b"
+      "bytes": 4841,
+      "sha256": "6f36c16acfe0552527b206703a0ddfb3fbaa0b31b37b710a5c71529566fe6a6d"
+    },
+    {
+      "path": "docs/api-standards.md",
+      "bytes": 16779,
+      "sha256": "aa6c450862bba8df8b05ce6d6bcfe3c7de2ce1ec54a6f024418e34d6fe79d973"
+    },
+    {
+      "path": "docs/api-standards.pdf",
+      "bytes": 80361,
+      "sha256": "c244cba1904abf94acc9fa60288e9f642a97f0dc9ac2585f7a9f435aa3ffade4"
     },
     {
       "path": "docs/authorization-decision.md",
-      "bytes": 4046,
-      "sha256": "dfc71ec718844807f42b04079fa3d192e6baf7f90c99bff83eecdfc35f06ed82"
+      "bytes": 4278,
+      "sha256": "3d870a14cf3b199613752dae391015c71df0a9ff8364aaad0a32af273885ad3c"
     },
     {
       "path": "docs/centralized-sso/AOBP_BFF_Centralized_SSO_Architecture.md",
-      "bytes": 54068,
-      "sha256": "d9e223ddd038faa0e00542510077826c441fecc764fd61e12e0ec3fe9ce3b97a"
+      "bytes": 54590,
+      "sha256": "a3459bf4499f62c08764d63befc7d863ce878041a597f35abdcc4e26b511ee7f"
     },
     {
       "path": "docs/centralized-sso/AOBP_BFF_Centralized_SSO_Architecture.pdf",
-      "bytes": 2196804,
-      "sha256": "418b4e2577552faf025d15e50e0736d600b9165da6dc9c9829313aaafa55c7af"
+      "bytes": 2199090,
+      "sha256": "b1c19290e7aa9a6aa6720692ed54bf693635f796929e40312912fb20533177e8"
     },
     {
       "path": "docs/centralized-sso/README.md",
-      "bytes": 891,
-      "sha256": "10d25da33721be130b0d7b6a35011ec47666c29d013ffe8733d0c4d0654e64af"
+      "bytes": 1126,
+      "sha256": "ace0ae53266b4c54723a26545e7654c4d3c95d38cc9bce322576eb602081a552"
     },
     {
       "path": "docs/centralized-sso/diagram-source/01_secure_access_architecture.drawio",
@@ -93,13 +103,13 @@
     },
     {
       "path": "docs/centralized-sso/diagram-source/07_logout_sequence.mmd",
-      "bytes": 447,
-      "sha256": "2355619f2252203d6bdcff3a74b62393e70e53e4b398ce7f7848f15f0caabb55"
+      "bytes": 455,
+      "sha256": "1c9a725cedef4e25b69075109816556a22a04cdeaedef3fbe3308d9d1ef959b4"
     },
     {
       "path": "docs/centralized-sso/diagram-source/07_logout_sequence.puml",
-      "bytes": 557,
-      "sha256": "d8d9bfa1dae5ed0ff2e83eaca5f7d4112b9017fad7056d4b057a403cc03070cd"
+      "bytes": 565,
+      "sha256": "f89b148a714e6121bd9d9ac696aeae627beb3754a9fc2b86176ac19718787f90"
     },
     {
       "path": "docs/centralized-sso/images/01_secure_access_architecture.png",
@@ -133,8 +143,8 @@
     },
     {
       "path": "docs/centralized-sso/images/07_logout_sequence.png",
-      "bytes": 187247,
-      "sha256": "1a72132d74832a031204464f44ab9f876e500f552aa57f7fae6595eee3a296d6"
+      "bytes": 188177,
+      "sha256": "cc3cdc0397aa325f428eb85a7e7668f780ef17f067784f0b71196264f102f809"
     },
     {
       "path": "docs/centralized-sso/svg/01_secure_access_architecture.svg",
@@ -168,18 +178,18 @@
     },
     {
       "path": "docs/centralized-sso/svg/07_logout_sequence.svg",
-      "bytes": 100424,
-      "sha256": "63399c2baebe21874f931e4591286984753b28f0eac8bea5c305aaac48414766"
+      "bytes": 102504,
+      "sha256": "1addc57c7fab653051e9c308ab7d61411290c5beabe3ab45c41b187a959d9bf5"
     },
     {
       "path": "docs/eks-bff/AOBP_BFF_Architecture_Design.md",
-      "bytes": 44735,
-      "sha256": "134ac98c3befa2854fc892bd3ec5b0882b5bc022f3f1624cee998c98483c5d21"
+      "bytes": 45410,
+      "sha256": "d66227c54efc8e5aad18c767ed2e4208f646845ccf2272f4d114bb496716e2ba"
     },
     {
       "path": "docs/eks-bff/AOBP_BFF_Architecture_Design.pdf",
-      "bytes": 1990229,
-      "sha256": "a6e4b4896ab6075a143d3210817f4f54adea0ae1dc29c9c679cc2290cec956a1"
+      "bytes": 1990771,
+      "sha256": "4a57e6b60c11864a096c0b9cee50b242280f68f04dc24a5539cba7c98eb71034"
     },
     {
       "path": "docs/eks-bff/diagrams/01_secure_access_architecture.png",
@@ -213,18 +223,18 @@
     },
     {
       "path": "docs/platform/AOBP_Platform_Architecture_Design.md",
-      "bytes": 135445,
-      "sha256": "f24560e7a283a201eedac64a2534787c598f4e04684d43c58f2cafd8163aaa32"
+      "bytes": 136115,
+      "sha256": "6cc48d2efb57a5cbfffd37406c435619a551f592cef318ab9a07b125dc7bf643"
     },
     {
       "path": "docs/platform/AOBP_Platform_Architecture_Design.pdf",
-      "bytes": 2340033,
-      "sha256": "c1fc4ee83680bb581a89169dd0790fc0d40ab6036b9f6d02620987722305f646"
+      "bytes": 2340732,
+      "sha256": "51a75baaf66988b5264d8cbc3933fe7415008ece73320da8edaac5f383d91c65"
     },
     {
       "path": "docs/platform/README.txt",
-      "bytes": 1166,
-      "sha256": "e68d01337941970beab9ce3ac696c63670cad248b955df4329301922d750adae"
+      "bytes": 663,
+      "sha256": "2879d9f95d12d6c4428bab7f1de984d1f7a0d38ccb10942fde79887559390341"
     },
     {
       "path": "docs/platform/assets/01_secure_access_architecture.png",
@@ -273,23 +283,23 @@
     },
     {
       "path": "docs/workflow/AODB_FLIGHT_DELAY_APPROVAL_STEP_BY_STEP_GUIDE.md",
-      "bytes": 56089,
-      "sha256": "ffe4d9cd1d7c7d302f5e9fdedcc73abb0e6dfc4f0c46334aef90f305f99d416d"
+      "bytes": 56970,
+      "sha256": "ec4af12edfed99f207ef7705f5cf0195071f4f57ff6c31aee46ce2c577812d8a"
     },
     {
       "path": "downloads/AOBP_Architecture_Document_and_PNGs.zip",
-      "bytes": 3197981,
-      "sha256": "ff947ae1c1cccde50b2c76587a701c2c4aa5291f1239f0b853270bcbe8d684f8"
+      "bytes": 3276501,
+      "sha256": "6c8a0a9db456aae053fdf161fd8688fbdb5c726bb6713ba52c52515faaa6270e"
     },
     {
       "path": "downloads/AOBP_BFF_Architecture_Markdown_and_Diagrams.zip",
-      "bytes": 3222448,
-      "sha256": "42e0d78e9d3d2329cf0897675eacbdb83938c52861a961e6e6c63d851ff5812c"
+      "bytes": 3303466,
+      "sha256": "47148f5e442e9537280eaf4875d93a1ccfb2c015fd0a548b19c35087fc973058"
     },
     {
       "path": "downloads/AOBP_BFF_Architecture_Package.zip",
-      "bytes": 2744658,
-      "sha256": "e4732ca457fa4c8bf2b734806f2b8ca41e8db99ae0aab087f2a3d2a27633aacf"
+      "bytes": 2823307,
+      "sha256": "3587a109183f5b6062b9a9ae85df786869c4184425866676638f59fce850dce8"
     },
     {
       "path": "reference/AOBP_Architecture_Implementation_Specification.docx",
@@ -308,13 +318,13 @@
     },
     {
       "path": "tools/build_pdfs.py",
-      "bytes": 5197,
-      "sha256": "cdd89b907fe65c46c8bf514e41a2ee4e7142af5e6eef5b0e1f127eda069d10cd"
+      "bytes": 5219,
+      "sha256": "6e5d49934ee4d2b68ca6f5da8f1451100325f2bfc30af3065be01ff66ff15fa3"
     },
     {
       "path": "tools/diagram_shapes.py",
-      "bytes": 10657,
-      "sha256": "8f135264f0b830d11f388c84dc3e72d8cd67defb8a833772f2d13aaea78690e1"
+      "bytes": 10665,
+      "sha256": "4157ff6053cbd62a49c566874894edde1ba2bbe93014bd4df6345d374c8d93f6"
     }
   ]
 }

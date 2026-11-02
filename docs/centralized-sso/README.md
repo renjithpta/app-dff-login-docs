@@ -1,5 +1,7 @@
 # AOBP BFF Architecture Package
 
+**API contract:** [AOBP API URL and HTTP standard](../api-standards.md). Application-owned endpoints in this edition use that convention; OAuth/OIDC and private vendor integration endpoints retain their documented protocol contracts.
+
 Open `AOBP_BFF_Centralized_SSO_Architecture.md` in a Markdown editor with local-image support.
 
 - `images/`: seven redrawn PNG diagrams, each 3408 pixels wide.

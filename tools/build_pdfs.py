@@ -25,7 +25,7 @@ def inline(x):
  # Relative links remain readable; live repository links are in Markdown.
  x=re.sub(r'\[([^\]]+)\]\(([^)]+)\)',r'\1',x)
  return x
-for edition,name in [('centralized-sso','AOBP_BFF_Centralized_SSO_Architecture'),('eks-bff','AOBP_BFF_Architecture_Design'),('platform','AOBP_Platform_Architecture_Design')]:
+for edition,name in [('centralized-sso','AOBP_BFF_Centralized_SSO_Architecture'),('eks-bff','AOBP_BFF_Architecture_Design'),('platform','AOBP_Platform_Architecture_Design'),('.','api-standards')]:
  folder=ROOT/'docs'/edition;md=folder/(name+'.md');lines=md.read_text().splitlines();story=[];i=0
  while i<len(lines):
   ln=lines[i]

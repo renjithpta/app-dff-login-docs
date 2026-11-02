@@ -1,5 +1,7 @@
 # AOBP - Centralized SSO, Authentication and Authorization
 
+**API contract:** [AOBP API URL and HTTP standard](../api-standards.md). Application-owned endpoints in this edition use that convention; OAuth/OIDC and private vendor integration endpoints retain their documented protocol contracts. Local-only logout uses `DELETE /bff/api/v1/session` (204); SSO logout orchestration uses `POST /bff/api/v1/logout-requests` (200 result, optional approved redirect).
+
 **BFF-based target architecture | AWS EKS | Proposed design | 2 November 2026**
 
 ## 1. Objective and introduction
@@ -79,23 +81,23 @@ Example origin: https://aobp.example.com. This is an illustrative hostname, to b
 | Browser URL / method | ALB target / behavior |
 | --- | --- |
 | GET / and /assets/* | UI static host. SPA fallback applies only to UI paths. |
-| GET /bff/session | BFF. Return display identity/capabilities or 401; never tokens. |
-| GET /bff/csrf | BFF. Return session-bound CSRF token; Cache-Control: no-store. |
+| GET/DELETE /bff/api/v1/session | BFF. GET: display identity/capabilities or 401. DELETE: end local session, 204; CSRF for active sessions. Never return tokens. |
+| GET /bff/api/v1/csrf-token | BFF. Return session-bound CSRF token; Cache-Control: no-store. |
 | GET /oauth2/authorization/bac | BFF. Begin login via top-level navigation. |
 | GET /login/oauth2/code/bac | BFF. OIDC query-mode callback with code and state. |
-| GET/POST /bff/api/v1/** | BFF. Session and CSRF checks, then allowlisted internal API proxy. |
-| POST /bff/logout | BFF. CSRF-protected logout, invalidate session and server tokens. |
-| GET /bff/ws | BFF WebSocket upgrade with session and exact Origin check. |
+| GET/POST/PATCH/PUT/DELETE /bff/api/v1/microservice-1/** | BFF. Session and CSRF checks, then allowlisted internal API proxy. |
+| POST /bff/api/v1/logout-requests | BFF. CSRF-protected logout, invalidate session and server tokens. |
+| GET /bff/ws/v1/events | BFF WebSocket upgrade with session and exact Origin check. |
 
 ### Route transformation example
 
 ```text
-Browser: POST https://aobp.example.com/bff/api/v1/resources/123
-BFF:     POST https://microservice-1.aobp.svc.cluster.local/api/v1/resources/123
+Browser: GET https://aobp.example.com/bff/api/v1/microservice-1/resources/resource-123
+BFF:     GET https://microservice-1.aobp.svc.cluster.local/api/v1/resources/resource-123
 Service: JWT validation -> local RBAC -> resource ABAC -> transaction
 ```
 
-Ingress sends BFF and OIDC paths to the BFF with higher priority than the UI catch-all. The BFF strips only the /bff prefix and chooses a fixed configured destination. Browser-supplied URLs, arbitrary hosts and arbitrary proxy paths are rejected. Private service DNS is resolvable only on the controlled backend network.
+Ingress sends BFF and OIDC paths to the BFF with higher priority than the UI catch-all. The BFF uses an explicit method/resource route table and chooses a fixed configured destination; it does not expose a catch-all proxy. Browser-supplied URLs, arbitrary hosts and arbitrary proxy paths are rejected. Private service DNS is resolvable only on the controlled backend network.
 
 ### Why a private gateway is optional
 
@@ -175,7 +177,7 @@ Figure 2. SSO activity sequence. Network redirects carry the authorization code;
 
 ### Step-by-step login
 
-1. React loads from its static host and calls /bff/session. A missing session returns 401 JSON. 2. The UI navigates to the BFF login endpoint. 3. The BFF stores a one-time login transaction in Redis and redirects to BAC SSO. 4. BAC authenticates the user with existing SSO/MFA rules. 5. The browser carries the authorization code to the BFF callback. 6. The BFF checks state, exchanges the code using the PKCE verifier and client authentication, and validates the ID token including issuer, audience and nonce. 7. It rotates the session identifier, stores tokens server-side and sets the session cookie. 8. It redirects to a validated local return path; React reloads session display information.
+1. React loads from its static host and calls /bff/api/v1/session. A missing session returns 401 JSON. 2. The UI navigates to the BFF login endpoint. 3. The BFF stores a one-time login transaction in Redis and redirects to BAC SSO. 4. BAC authenticates the user with existing SSO/MFA rules. 5. The browser carries the authorization code to the BFF callback. 6. The BFF checks state, exchanges the code using the PKCE verifier and client authentication, and validates the ID token including issuer, audience and nonce. 7. It rotates the session identifier, stores tokens server-side and sets the session cookie. 8. It redirects to a validated local return path; React reloads session display information.
 
 BAC credentials are entered at BAC SSO, not the BFF. If Keycloak brokers BAC, AOBP trusts Keycloak as the configured issuer; federation and logout behavior must be tested. Do not treat tokens from two issuers as interchangeable.
 
@@ -188,7 +190,7 @@ BAC credentials are entered at BAC SSO, not the BFF. If Keycloak brokers BAC, AO
 | Refresh token | Server-side store; sent only from BFF to IdP token endpoint. |
 | ID token | BFF authentication context. Not used as an API bearer token. |
 | CSRF token | Session-bound value available to React and sent as X-CSRF-TOKEN on unsafe requests. Not an OAuth token. |
-| Display user / capabilities | Minimal /bff/session response. UI hints only; server authorization remains authoritative. |
+| Display user / capabilities | Minimal /bff/api/v1/session response. UI hints only; server authorization remains authoritative. |
 
 ```text
 Set-Cookie: __Host-AOBPSESSION=<opaque>; Path=/; Secure; HttpOnly; SameSite=Lax
@@ -317,7 +319,7 @@ A clear invalid_token response may trigger one controlled refresh and retry only
 
 ### Logout sequence
 
-1. React sends POST /bff/logout with CSRF. 2. BFF marks the session inactive and increments its generation/tombstone before clearing token data. 3. Remove shared session and authorized-client state; close tracked WebSocket sessions. 4. Revoke the refresh token at the IdP where supported. 5. Expire the browser cookie with the same name/path. 6. If global SSO logout is required, use the provider-supported RP-initiated logout flow and approved return URI. Record success/failure without tokens.
+1. React sends POST /bff/api/v1/logout-requests with CSRF. 2. BFF marks the session inactive and increments its generation/tombstone before clearing token data. 3. Remove shared session and authorized-client state; close tracked WebSocket sessions. 4. Revoke the refresh token at the IdP where supported. 5. Expire the browser cookie with the same name/path. 6. If global SSO logout is required, use the provider-supported RP-initiated logout flow and approved return URI. Record success/failure without tokens.
 
 Deleting the BFF session stops browser access through that BFF immediately. It does not automatically invalidate an already issued self-contained JWT at every service. Provider revocation semantics vary. For strict rapid revocation, enforce a distributed jti/sid/session-generation deny state at every enforcement point or use supported introspection/reference tokens. Set an explicit maximum propagation delay and test it.
 
@@ -356,7 +358,7 @@ If an integration truly acts for a user, use an approved delegated/OBO/token-exc
 
 ### WebSocket behavior
 
-The browser opens wss://aobp.example.com/bff/ws. BFF authenticates the session cookie and validates the exact Origin before upgrade. It opens a controlled direct backend connection with a server-added Authorization header. The browser WebSocket API cannot set arbitrary Authorization headers, so do not put OAuth tokens in query parameters.
+The browser opens wss://aobp.example.com/bff/ws/v1/events. BFF authenticates the session cookie and validates the exact Origin before upgrade. It opens a controlled direct backend connection with a server-added Authorization header. The browser WebSocket API cannot set arbitrary Authorization headers, so do not put OAuth tokens in query parameters.
 
 A connection upgrade is authenticated once; every subscription/message still needs authorization. Cap connection lifetime, periodically recheck session/revocation and close connections on logout/expiry. Token refresh does not automatically reauthenticate an existing backend WebSocket. Define a reconnect/re-authentication protocol before token or session expiry. Configure ALB idle timeout, heartbeats, connection draining and gateway upgrade routing, then test reconnect across replicas.
 

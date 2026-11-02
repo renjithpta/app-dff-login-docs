@@ -8,7 +8,7 @@ participant "Browser" as P0
 participant "BFF replica" as P1
 participant "Redis" as P2
 participant "Identity Provider" as P3
-P0 -> P1: POST logout and CSRF
+P0 -> P1: Create logout request + CSRF
 P1 -> P2: Invalidate shared session
 P1 -> P2: Delete token record
 P1 --> P0: Clear cookie; return logout URL

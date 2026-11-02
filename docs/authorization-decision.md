@@ -1,5 +1,7 @@
 # Authorization ownership decision
 
+**API contract:** [AOBP API URL and HTTP standard](api-standards.md). Application-owned endpoints in this edition use that convention; OAuth/OIDC and private vendor integration endpoints retain their documented protocol contracts.
+
 Status: accepted design direction, 2 November 2026.
 
 ## Decision

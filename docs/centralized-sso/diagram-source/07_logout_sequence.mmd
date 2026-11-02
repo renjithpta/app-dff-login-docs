@@ -4,7 +4,7 @@ sequenceDiagram
     participant P1 as BFF replica
     participant P2 as Redis
     participant P3 as Identity Provider
-    P0->>P1: POST logout and CSRF
+    P0->>P1: Create logout request + CSRF
     P1->>P2: Invalidate shared session
     P1->>P2: Delete token record
     P1-->>P0: Clear cookie; return logout URL
