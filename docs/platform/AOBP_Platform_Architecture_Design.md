@@ -165,7 +165,7 @@ The cost is an additional application hop, a sensitive BFF runtime and a highly 
 | Spring Boot BFF | Private EKS pods, aobp-apps | OIDC client, login callback, CSRF, session, token refresh and relay |
 | Shared session/token store | Private managed Redis-compatible service | Sensitive transient session and authorized-client state for all BFF replicas |
 | Keycloak identity broker | Isolated identity runtime and database | Federates BAC SSO and issues AOBP tokens; maintains required federation metadata |
-| Central Security Service | Private authorization runtime | Resolves approved group-to-role mappings, permissions and policy decisions |
+| Authorization Management Service | Private authorization control plane | Administers/distributes versioned role mappings, permissions and policies; services evaluate locally |
 | Flight / Workflow / other APIs | Private EKS pods | Validate JWTs and enforce business permissions, ABAC and state changes |
 | Business data and event services | Private managed data tier | Durable records, audit outbox and governed events |
 
@@ -467,7 +467,7 @@ The token save operation must check that the session still exists, has the same 
 
 AOBP stores roles, permissions, issuer-qualified external-group mappings, scope policies and audit references. It does not store corporate passwords or maintain a parallel editable employee directory. A BFF session is transient security state, not an application user account. Keycloak may retain federation metadata; this must be recognized explicitly in BAC's identity policy.
 
-Use immutable issuer+subject and stable group identifiers. Resolve group overage, missing claims and lifecycle events through approved IdP mechanisms; absence of group data must not grant broader access. The Central Security Service maps trusted claims to AOBP permissions and terminal scopes. UI capability information is for display and never substitutes for backend checks.
+Use immutable issuer+subject and stable group identifiers. Resolve group overage, missing claims and lifecycle events through approved IdP mechanisms; absence of group data must not grant broader access. Centrally managed mappings resolve trusted claims into AOBP permissions and terminal scopes at each service-local evaluator. UI capability information is for display and never substitutes for backend checks.
 
 ## 7. Business authorization
 
@@ -488,15 +488,35 @@ Reference interface: `FlightAuthorization.checkCanRead(subject, flight)` and `ch
 Recheck update invariants under transaction/optimistic locking. A permission allow does not override an invalid business state. Use idempotency for retried commands. Do not automatically retry non-idempotent mutations at the gateway.
 
 
-### Central Security Service and a simple worked example
+### Central administration and local authorization
 
-The Central Security Service is the shared policy decision capability; services remain enforcement points. It owns authorization configuration, not corporate authentication. Gateway may use cached coarse operation mappings for partner routes. Browser BFF routes rely on BFF session checks; the private API always performs the authoritative business check. An authenticated private service call must not be treated as authorized just because it originated in the cluster.
+The Authorization Management Service owns authorization configuration and distribution, not corporate authentication. Each API validates the user JWT and evaluates both operation RBAC and resource ABAC locally. The gateway applies routing, traffic controls and optional coarse checks for partner routes; it is not a second business permission authority. The BFF calls the selected private service directly. A private gateway is optional for a separately justified traffic-management requirement, not a prerequisite for RBAC.
+
+### Central administration with local enforcement
+
+The Authorization Management Service owns versioned role definitions, issuer-scoped entitlement mappings, permissions, named policies and scope grants. It authenticates service workloads and publishes approved, signed/versioned policy bundles or authenticated snapshots. It is a control-plane component, not a required synchronous hop for every business request. Each service validates the configured publisher/signature and schema, enforces version/validity bounds, and evaluates both RBAC and ABAC locally. Spring services may use shared policy classes; polyglot services may use a local policy evaluator with the same versioned contract. Domain services own their resource-specific rules.
+
+Policies use stable permission names, independent of service deployment names. A service selects the required permission from its controlled operation mapping. It supplies the verified issuer/subject, trusted entitlements and authoritative resource attributes; the browser cannot select its actor, policy, permission or scope grant. Query, bulk and export paths enforce the same rules.
+
+Policy distribution uses change notifications plus periodic reconciliation and a bounded maximum age. A service may continue using a last-known-good snapshot only while it remains explicitly valid and permitted by policy. Missing, invalid or expired mandatory policy/entitlement data causes a controlled 503 with no business mutation; a valid policy denial is 403. Sensitive operations can require a fresh entitlement check through an authenticated central endpoint under a documented availability contract.
+
+Log policy version, entitlement source/freshness and a safe decision reason. Revocation targets must cover token claim age, policy/grant caches and notification delay. Refreshing a policy bundle does not remove stale group claims from an existing JWT; meeting a tighter SLA requires token revocation, fresh entitlement resolution or reauthentication. Never silently extend validity during an outage.
+### Token relay and enforcement details
+
+Token relay forwards the current user's **access token** in `Authorization: Bearer ...`; it does not grant permission by itself. Each service acts as an OAuth resource server and validates the configured issuer, signature/allowed algorithm, intended audience and time claims. An ID token authenticates the BFF login; it is not an API credential. A refresh token is sent only to the provider token endpoint.
+
+For Spring services, enable method authorization explicitly with `@EnableMethodSecurity`; adding the security starter alone does not enable it. Apply operation authorization at the application/service layer, with a trusted permission resolver or `AuthorizationManager`. Map provider groups/roles through the governed entitlement contract; default `SCOPE_` authorities do not automatically become AOBP business permissions. Resource authorization loads authoritative data inside the protected use case, with transaction/version checks before mutation. Account for proxy/self-invocation boundaries when using annotation-based enforcement.
+
+Every path must follow the same rules: REST controllers, service-to-service requests, background workload identities, list/export queries and WebSocket subscriptions/messages. Authenticate long-lived connection establishment and re-evaluate applicable session, permission and resource constraints for subsequent operations. Enforce query scope before pagination/count/export, not by hiding records in the UI.
+
+These are implementation requirements and design choices, not a claim that one framework annotation or an API gateway automatically provides complete authorization. Verify behaviour against the supported framework/IdP versions selected for deployment. Reviewed primary references on 2 November 2026: [Spring method security](https://docs.spring.io/spring-security/reference/servlet/authorization/method-security.html), [JWT resource server](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html), and [OWASP authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html).
+
 
 Example: User A belongs to BAC Operations, maps to OPERATOR, and may work on Terminal T1. Updating a T1 flight requires both flight.operational-time.update and a matching terminal scope. Updating a T2 flight returns 403 even when the request passed ALB, gateway and BFF. Changing terminalId in the browser request cannot change the trusted terminal read from the flight database.
 
 Permission mapping uses business capabilities rather than one permissions table per microservice. A logical API audience is still registered with the IdP. Absence of an application-owned microservice registration table does not exempt APIs from client registration, audience checks or workload identity.
 
-Central policy availability is an operational concern. Use versioned policy/config caches or local evaluators where appropriate; define freshness explicitly. Do not silently allow writes when the security service is unavailable. Record deny decisions and policy version without copying tokens or full identity profiles into logs.
+Authorization management availability affects policy refresh, not every business request. Continue local evaluation only while the last-known-good policy and entitlement snapshot remain explicitly valid. Missing or expired required data, or a mandatory fresh-check outage, fails closed. Record deny decisions and policy version without copying tokens or full identity profiles into logs.
 
 ## 8. WebSocket flow and scaling
 
@@ -987,7 +1007,7 @@ The platform team creates Ingress and ClusterIP Services. The controller reads t
 | BFF | Deployment + ClusterIP; gateway-only application ingress | Minimum 3 pods across zones; HPA; PDB minAvailable 2 |
 | Shell and each remote | Independent Deployment + ClusterIP; ALB targets | Minimum 2 pods; immutable static asset versions |
 | Flight / Workflow APIs | Independent Deployments + ClusterIP | Minimum 2 pods per service; scale from tested workload |
-| Central Security Service | Deployment + ClusterIP | Minimum 2 pods; tested cache/freshness and fail-closed behavior |
+| Authorization Management Service | Deployment + private ClusterIP control plane | Minimum 2 pods; tested distribution, versioning, invalidation and local snapshot validity bounds |
 | Keycloak | Supported HA deployment; isolated identity ingress | Follow selected release HA/database/cache guidance |
 | Session store | Managed private Redis-compatible replication group | Multi-AZ failover; TLS/ACL/encryption; capacity and loss behavior tested |
 | Business / authorization / identity databases | Private PostgreSQL services, distinct ownership/grants | Multi-AZ managed DB where selected; backup/PITR and restore tests |
@@ -1206,7 +1226,7 @@ Flight API owns flight state and trusted object attributes. Keycloak owns identi
 
 Transactionally persist flight changes plus outbox records. Consumers deduplicate, observe event ordering/resource versions and reconcile after downtime. Capture denied requests and failed authentication through a separate security-event path. Protected immutable archive provides stronger audit assurance than an append-only SQL table alone.
 
-On observability outage, bounded buffers and a documented loss policy protect business operations. On audit persistence failure, critical audited mutations fail according to approved business policy. On policy outage, fail closed for protected actions. On session-store outage, return controlled unavailable responses rather than creating anonymous/partial sessions. On IdP outage, new login fails; existing sessions follow expiry/refresh rules with no hidden local-password fallback.
+On observability outage, bounded buffers and a documented loss policy protect business operations. On audit persistence failure, critical audited mutations fail according to approved business policy. On policy-management outage, local evaluation may continue within explicit validity bounds; unavailable or expired mandatory policy/entitlement data fails closed. On session-store outage, return controlled unavailable responses rather than creating anonymous/partial sessions. On IdP outage, new login fails; existing sessions follow expiry/refresh rules with no hidden local-password fallback.
 
 On-prem/AWS DR: independent entry and gateway capability, same approved application/configuration digests, replicated/backed-up business/identity data, recoverable signing keys/secrets, explicit fencing of primary writers, DNS/routing cutover and partner routing. Do not stretch a session/quota/database quorum across sites casually. Prefer an explicitly tested active/passive design until latency and consistency requirements justify more. Reauthentication after failover is an acceptable proposed simplification, subject to business agreement. Recovery targets remain to be approved per service.
 
@@ -1254,7 +1274,7 @@ On-prem/AWS DR: independent entry and gateway capability, same approved applicat
 | Logout races with refresh | In-flight refresh cannot recreate session/token state after revocation or absolute expiry |
 | Back-channel logout callback | Valid IdP logout closes mapped sessions; replayed or forged logout tokens fail |
 | Probe logs and edge logging configuration | Browser ALB raw access logging is disabled; retained application/WAF records contain no credentials, callback code/state or session identifiers |
-| Deploy policy/store outage | Protected operations fail closed with controlled 503, not restart storms |
+| Deploy policy/store outage | Valid local snapshots follow their bounded availability contract; missing/expired mandatory state fails closed with controlled 503 |
 
 Production sign-off requires results, not only the presence of these controls in configuration.
 

@@ -1,0 +1,23 @@
+@startuml
+skinparam shadowing false
+skinparam ParticipantBackgroundColor #FFF0A8
+skinparam ActivationBackgroundColor #FFF6D2
+skinparam ArrowColor #484334
+autonumber
+participant "Browser" as P0
+participant "BFF" as P1
+participant "Microservice 1" as P2
+participant "Business DB" as P3
+P0 -> P1: Cookie and CSRF
+P1 -> P1: Validate session
+P1 -> P2: Bearer request
+P2 -> P2: JWT and freshness
+P2 -> P2: Local RBAC
+P2 -> P3: Read resource scope
+P3 --> P2: Scope and version
+P2 -> P2: Local ABAC
+P2 -> P3: Commit and audit
+P3 --> P2: Committed result
+P2 --> P1: Business response
+P1 --> P0: Business JSON
+@enduml

@@ -6,7 +6,7 @@ React microfrontends · Spring Boot BFF · Redis · Microservices
 
 *Architecture design | 2 November 2026*
 
-This editable Markdown edition follows the 28-page PDF. Diagrams are redrawn from vector source as high-resolution PNGs, with SVG and Mermaid alternatives. Keep the `images`, `svg` and `diagram-source` folders beside this file when moving the document.
+This editable edition implements the accepted service-local authorization decision and retains the numbered document structure. Diagrams are redrawn from vector source as high-resolution PNGs, with SVG and Mermaid alternatives. Keep the `images`, `svg` and `diagram-source` folders beside this file when moving the document.
 
 ## 1. Introduction and Objective
 
@@ -26,7 +26,7 @@ The design retains the reference architecture's separation between identity inte
 
 - **Server-side token handling:** the browser receives a session cookie. Access and refresh tokens remain in protected server-side storage.
 
-- **Business RBAC and scope ABAC:** the gateway applies operation checks; every microservice applies its resource policies before executing work.
+- **Business RBAC and scope ABAC:** each microservice evaluates operation permissions and resource policies before executing work.
 
 - **Horizontal scaling:** BFF replicas share Redis-backed security state. The same logical session can be processed by any healthy replica.
 
@@ -38,19 +38,19 @@ The design retains the reference architecture's separation between identity inte
 
 [Scalable SVG](svg/01_secure_access_architecture.svg) · [Editable Mermaid source](diagram-source/01_secure_access_architecture.mmd)
 
-*Figure 1. Read top to bottom. Both BFF replicas share Redis and use the same OIDC provider. A1-A7 identify attack points reviewed in Section 13. A8 covers policy/data/audit stores; A9 covers deployment administration. Public routes never expose Redis or the private bearer gateway.*
+*Figure 1. Read top to bottom. Both BFF replicas share Redis and use the same OIDC provider. A1-A7 identify attack points reviewed in Section 13; A6 is JWT validation at each microservice. A8 covers authorization administration/data/audit; A9 covers deployment administration. The BFF calls services directly. Dashed policy-distribution links are control-plane traffic, not a per-request decision hop.*
 
 ### 2. Architecture responsibilities and boundaries
 
 | Component | Responsibility |
 | --- | --- |
 | React shell and microfrontends | Render the application and call same-origin BFF endpoints; do not hold OAuth tokens. |
-| API Gateway | Expose the application entry point; route BFF login/API requests; enforce limits and delegated operation checks. |
+| API Gateway | Expose the application entry point; route BFF login/API requests and enforce traffic limits. Optional coarse checks do not replace service authorization. |
 | BFF replicas | Perform login, session and CSRF checks, refresh authorized clients and relay access tokens. |
 | Redis | Store shared sessions, encrypted token records and refresh coordination state. |
 | Identity Provider | Authenticate and federate users; issue signed tokens and own external entitlements. |
-| Central Security Service | Map trusted external entitlements to AOBP roles and evaluate permissions and policies. |
-| Microservice 1 and 2 | Validate access tokens and enforce resource policies on business operations. |
+| Authorization Management Service | Centrally administer and distribute versioned roles, mappings, permissions, policies and scope grants. |
+| Microservice 1 and 2 | Validate access tokens and enforce both RBAC operation permissions and ABAC resource policies on business operations. |
 | Authorization Database | Store application roles, permissions, entitlement mappings, policies and scoped grants. |
 
 ### Routing and trust boundaries
@@ -61,9 +61,9 @@ The design retains the reference architecture's separation between identity inte
 | /oauth2/** and /login/oauth2/code/** | Public edge to BFF; exact login and callback allowlist |
 | /bff/session, /bff/csrf, /bff/logout | Public edge to BFF; session contract |
 | /bff/api/microservice-1/** or microservice-2/** | Public edge to BFF; fixed operation allowlist |
-| Internal bearer API routes | Private gateway to selected microservice; no public ingress |
+| Internal bearer API routes | BFF to selected microservice directly; no public API ingress |
 
-In AWS EKS, a public HTTPS ALB with WAF targets approved public-edge pods. BFF, private gateway and microservices use internal ClusterIP Services in private subnets. The private gateway does not require a second internet-facing load balancer. Enforce this topology with security groups and an enabled network-policy implementation; a ClusterIP address alone is not access control.
+In AWS EKS, a public HTTPS ALB with WAF targets approved public-edge pods. BFF and microservices use internal ClusterIP Services in private subnets. A private gateway is optional for justified routing, quotas or protocol controls; it is not required for RBAC and is not on the default BFF-to-service path. Enforce this topology with security groups and an enabled network-policy implementation; a ClusterIP address alone is not access control.
 
 Terminate public TLS at the approved edge, then explicitly configure TLS for each internal hop; use mTLS/workload identity for service calls where required. Keep authentication and authorization checks active even when traffic is encrypted. Limit provider egress to approved OIDC hosts and protect DNS/proxy trust settings.
 
@@ -115,7 +115,7 @@ Roles represent business responsibilities rather than service names. Manage them
 
 ### Step 5 Map IdP groups to AOBP roles
 
-The Central Security Service resolves trusted token groups or approved IdP API results. Store issuer, entitlement type and a stable external entitlement ID in each mapping. Missing or malformed entitlements grant no access.
+Trusted entitlement integration resolves token groups or approved IdP API results. The centrally managed mappings are distributed to each service. Store issuer, entitlement type and a stable external entitlement ID in each mapping. Missing or malformed entitlements grant no access.
 
 | External entitlement | AOBP role |
 | --- | --- |
@@ -125,7 +125,7 @@ The Central Security Service resolves trusted token groups or approved IdP API r
 
 ### Step 6 Define business permissions
 
-Use capability-oriented permissions such as **DATA.READ**, **DATA.UPDATE** and **CONFIG.MANAGE**. Different microservices can enforce the same permission. Map each method and route to its permission in controlled API policy configuration.
+Use capability-oriented permissions such as **DATA.READ**, **DATA.UPDATE** and **CONFIG.MANAGE**. Different microservices can enforce the same permission. Map each service operation to its permission in that service's controlled policy configuration.
 
 ### Step 7 Assign permissions to roles
 
@@ -176,9 +176,9 @@ Token relay means the BFF attaches the current user's access token to a separate
 
 [Scalable SVG](svg/03_token_relay_sequence.svg) · [Editable Mermaid source](diagram-source/03_token_relay_sequence.mmd)
 
-*Figure 3. The public edge forwards the browser request to the BFF and is omitted from the lifelines. Redis is read during step 2 and refresh follows Section 7. A denied RBAC or ABAC response stops the flow before business work; the business response returns through the same private gateway connection.*
+*Figure 3. The public edge forwards the browser request to the BFF and is omitted from the lifelines. Redis is read during step 2 and refresh follows Section 7. A denied RBAC or ABAC response stops the flow before business work; the BFF calls the resource-owning service directly, which enforces both RBAC and ABAC using a valid local policy snapshot.*
 
-Step 8 uses the resource scope read by the microservice from authoritative data. Step 10 is a transaction/version-checked operation. For Microservice 2, substitute that service and its controlled route/policy mapping; the identity and credential rules remain the same.
+The resource scope is read from authoritative data. The service evaluates RBAC and ABAC before its transaction/version-checked operation. For Microservice 2, substitute that service and its controlled route/policy mapping; the identity and credential rules remain the same.
 
 ### 5. Token Relay example and credentials
 
@@ -197,7 +197,7 @@ Cookie: AOBPSESSION=<opaque-session-id>
 3. The BFF builds a new request to a configured internal destination. It strips client-supplied identity and authorization metadata and supplies its own bearer header.
 
 ```http
-BFF -> private bearer gateway -> Microservice 1 over TLS
+BFF -> Microservice 1 directly over private TLS
 GET /api/v1/resources/resource-123
 Authorization: Bearer <user-access-token>
 traceparent: <validated-trace-context>
@@ -214,7 +214,7 @@ traceparent: <validated-trace-context>
 | Browser to BFF through gateway | Opaque session cookie; CSRF header for state changes |
 | BFF to Microservice 1 or 2 | Authorization: Bearer <access-token> |
 | BFF to provider token endpoint | Client authentication plus code/verifier or refresh token |
-| Microservice to Central Security Service | Approved workload identity and verifiable user context |
+| Authorization management to service evaluator | Authenticated/signed versioned policy snapshot; workload identity; no browser cookies or refresh tokens |
 
 Do not relay refresh tokens, ID tokens or browser cookies to microservices. Avoid default WebClient configuration that attaches tokens to every URL. Destination and method allowlists prevent the BFF becoming an open proxy. Machine integrations bypass browser-session endpoints and use a separately secured OAuth client-credentials API path.
 
@@ -287,50 +287,60 @@ Only the BFF refreshes user tokens. The UI and microservices do not receive or u
 
 A lease and fenced write protect local state, but they do not fence the provider's token endpoint. If a process pauses beyond its lease or crashes after rotation and before persistence, competing exchanges or lost tokens may force login. Test these windows explicitly; do not claim exactly-once refresh across systems.
 
-## 8. Gateway RBAC Authorization
+## 8. Service Level RBAC Authorization
 
-Keep one external gateway entry point while distinguishing browser-session traffic from internal bearer traffic. An operation permission check cannot be based on an arbitrary browser header or on a token that the browser no longer holds.
+Business authorization belongs in the resource-owning microservice. The public gateway provides routing, rate limits and optional coarse token/scope checks. The BFF owns browser authentication, sessions, CSRF and token relay. A private gateway is not required for business RBAC.
 
-### Recommended routing and enforcement
+### Request processing in order
 
-1. The external gateway routes **/bff/****, login and callback paths to the BFF. It applies rate limits and trusted proxy handling; it does not parse Redis sessions to impersonate the BFF.
+1. The public edge routes the browser request to the BFF.
+2. The BFF validates the session, CSRF where required, and a fixed operation/destination allowlist.
+3. The BFF obtains a usable access token and creates a new TLS request directly to Microservice 1 or Microservice 2.
+4. The receiving service validates JWT signature, issuer, audience, algorithm and time claims.
+5. The service resolves the operation's required permission from server-controlled configuration and evaluates RBAC using valid centrally managed policy/entitlement data.
+6. It loads authoritative resource attributes and evaluates ABAC plus business-state conditions.
+7. Only an allowed operation may commit, with input validation, concurrency controls and durable audit.
 
-2. The BFF authenticates the cookie and constructs the bearer request. For the reference design's gateway RBAC check, it sends that request to a private gateway listener reachable only from approved workloads.
-
-3. The private bearer listener validates the access token and maps the internal method/route to a required permission. It calls the Central Security Service with authenticated workload identity and verifiable user context.
-
-4. The gateway forwards only allowed operations to the selected microservice. The service validates the JWT independently and enforces its own operation and resource policies.
-
-```http
-Browser -> public gateway -> BFF
-BFF -> private bearer gateway -> Microservice 1 or 2
+```text
+Browser -> public edge / gateway -> BFF -> Microservice 1 or 2
+Authorization management -> versioned policy distribution -> local service evaluators
 ```
 
-Separate listeners/routes prevent a routing loop: the BFF calls internal API routes, not its own /bff route. Do not expose private API routes as an unauthenticated alternative. A simpler deployment may call services directly and enforce operation RBAC in the BFF plus service; that is an explicit alternative to the gateway RBAC hop above.
+The second line is a control-plane flow. It is not executed as a required remote policy decision for every business request. A gateway may be retained privately for justified routing or traffic management; every service still enforces both RBAC and ABAC. Do not duplicate business permission mappings at the gateway as a second authority.
 
-### Central Security Service evaluates RBAC
+### Central administration with local enforcement
 
-Validate or verify the trusted user context; resolve IdP entitlements; map them to enabled AOBP roles; load the roles' permissions; evaluate the required permission; return allow/deny with policy version and reason code. Gateway and service select the required permission from controlled configuration, never from a browser-supplied permission string.
+The Authorization Management Service owns versioned role definitions, issuer-scoped entitlement mappings, permissions, named policies and scope grants. It authenticates service workloads and publishes approved, signed/versioned policy bundles or authenticated snapshots. It is a control-plane component, not a required synchronous hop for every business request. Each service validates the configured publisher/signature and schema, enforces version/validity bounds, and evaluates both RBAC and ABAC locally. Spring services may use shared policy classes; polyglot services may use a local policy evaluator with the same versioned contract. Domain services own their resource-specific rules.
 
-The service may validate a relayed access token itself, or consume a short-lived signed internal identity assertion under a documented contract. Workload authentication alone is insufficient proof of the end-user identity. Do not trust unsigned X-User or X-Roles headers.
+Policies use stable permission names, independent of service deployment names. A service selects the required permission from its controlled operation mapping. It supplies the verified issuer/subject, trusted entitlements and authoritative resource attributes; the browser cannot select its actor, policy, permission or scope grant. Query, bulk and export paths enforce the same rules.
 
-Cache authorization only with subject/issuer, relevant entitlement version, action, resource scope and policy version in the key. Define bounded TTLs and invalidation for role/scope changes. Return 503 for unavailable mandatory decisions; distinguish failure from an explicit 403 denial. Do not allow on evaluator failure.
+Policy distribution uses change notifications plus periodic reconciliation and a bounded maximum age. A service may continue using a last-known-good snapshot only while it remains explicitly valid and permitted by policy. Missing, invalid or expired mandatory policy/entitlement data causes a controlled 503 with no business mutation; a valid policy denial is 403. Sensitive operations can require a fresh entitlement check through an authenticated central endpoint under a documented availability contract.
+
+Log policy version, entitlement source/freshness and a safe decision reason. Revocation targets must cover token claim age, policy/grant caches and notification delay. Refreshing a policy bundle does not remove stale group claims from an existing JWT; meeting a tighter SLA requires token revocation, fresh entitlement resolution or reauthentication. Never silently extend validity during an outage.
+
+### Token relay and enforcement details
+
+Token relay forwards the current user's **access token** in `Authorization: Bearer ...`; it does not grant permission by itself. Each service acts as an OAuth resource server and validates the configured issuer, signature/allowed algorithm, intended audience and time claims. An ID token authenticates the BFF login; it is not an API credential. A refresh token is sent only to the provider token endpoint.
+
+For Spring services, enable method authorization explicitly with `@EnableMethodSecurity`; adding the security starter alone does not enable it. Apply operation authorization at the application/service layer, with a trusted permission resolver or `AuthorizationManager`. Map provider groups/roles through the governed entitlement contract; default `SCOPE_` authorities do not automatically become AOBP business permissions. Resource authorization loads authoritative data inside the protected use case, with transaction/version checks before mutation. Account for proxy/self-invocation boundaries when using annotation-based enforcement.
+
+Every path must follow the same rules: REST controllers, service-to-service requests, background workload identities, list/export queries and WebSocket subscriptions/messages. Authenticate long-lived connection establishment and re-evaluate applicable session, permission and resource constraints for subsequent operations. Enforce query scope before pagination/count/export, not by hiding records in the UI.
+
+These are implementation requirements and design choices, not a claim that one framework annotation or an API gateway automatically provides complete authorization. Verify behaviour against the supported framework/IdP versions selected for deployment. Reviewed primary references on 2 November 2026: [Spring method security](https://docs.spring.io/spring-security/reference/servlet/authorization/method-security.html), [JWT resource server](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html), and [OWASP authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html).
 
 ### 8. Request activity and denial paths
 
-Read the main path from top to bottom. Each No branch returns a controlled error and prevents downstream business work. Session checks are in the BFF; JWT and operation checks are at the private gateway and service; resource policies are enforced in the microservice.
+The BFF checks the browser session, CSRF and usable token. Each microservice checks JWT, policy freshness, RBAC and resource ABAC. Failure at any required gate stops business work.
 
 ![Request activity and denial paths](images/06_request_activity_and_denials.png)
 
 [Scalable SVG](svg/06_request_activity_and_denials.svg) · [Editable Mermaid source](diagram-source/06_request_activity_and_denials.mmd)
 
-*Figure 6. CSRF is required for state changes, not ordinary safe GET requests. Token-ready means a valid token is available after any safe coordinated refresh. The service independently repeats JWT and operation enforcement even after gateway approval. Input validation and transactional concurrency checks must also pass before commit.*
-
-For missing or invalid permission, return 403. A security dependency failure returns 503 rather than granting access. The 401/503 refresh branch depends on whether authorization is invalid or the provider/store is temporarily unavailable. Do not automatically replay an uncertain mutation.
+*Figure 6. JWT, RBAC and ABAC gates are inside each microservice. A valid local policy snapshot permits evaluation without a synchronous central call. Expired mandatory policy data causes 503, not allow. Input validation and transactional business checks remain required before commit.*
 
 ## 9. Resource Level ABAC Authorization
 
-The gateway permission check answers whether the user may attempt an operation. The microservice answers whether the operation is allowed on this specific resource. Apply both checks to reads, writes, list results, exports and alternative entry points.
+The microservice RBAC check answers whether the user may perform an operation. Its ABAC check determines whether that operation is allowed on this specific resource. Apply both checks to reads, writes, list results, exports and alternative entry points.
 
 ### Example using a generic resource
 
@@ -353,7 +363,7 @@ The gateway permission check answers whether the user may attempt an operation. 
 
 2. It reads resource-123 and its scope from authoritative business data. For creates, validate the proposed scope against trusted subject grants before persistence.
 
-3. It asks the Central Security Service to evaluate the named scope policy using the trusted context and resource attributes. Policy selection is controlled by the server.
+3. It evaluates the named scope policy locally using valid centrally managed policy data and trusted resource attributes. A domain-specific adapter supplies authoritative resource context; policy selection is controlled by the server.
 
 4. It commits only if role permission and scope policy both allow. Use a transaction/version check so the authorized resource scope cannot change unnoticed between policy evaluation and update.
 
@@ -451,13 +461,13 @@ If expiry occurs after a token was accepted, services usually finish that reques
 | 404 | Missing resource or consistently concealed inaccessible object. |
 | 409 | Concurrent modification, repeated decision or duplicate operation. |
 | 429 | Rate limited; respect Retry-After and mutation retry rules. |
-| 503 | Required session, identity or policy dependency unavailable; fail closed. |
+| 503 | Required session, identity dependency unavailable or mandatory local policy/entitlement data unavailable or expired; fail closed. |
 
 Return application/problem+json using RFC 9457, with safe title/detail, application error code and request ID. API calls return JSON rather than a redirect to an HTML login page. Never expose tokens, session IDs, internal URLs or stack traces.
 
 ### Logs traces and dashboards
 
-Propagate W3C trace context across gateway, BFF, security evaluator and microservices. Record structured JSON logs with UTC timestamp, service, route template, status, latency, request ID and trace/span IDs. Redact Authorization, Cookie, token and client-secret values at source.
+Propagate W3C trace context across gateway, BFF and microservices, with policy distribution tracked separately. Record structured JSON logs with UTC timestamp, service, route template, status, latency, request ID and trace/span IDs. Redact Authorization, Cookie, token and client-secret values at source.
 
 Track latency/error percentiles, login and refresh failures, CSRF/policy denials, Redis latency, refresh lease contention and evaluator availability. Use bounded labels; avoid user/resource IDs as metric dimensions. Link traces to access-controlled audit records. Technical trace sampling must not discard durable business or security audit.
 
@@ -474,7 +484,7 @@ The following attack points are design-review scenarios, not findings from a com
 | A3 | SSO callback: login CSRF, code substitution, open redirect or wrong issuer | Identity / BFF |
 | A4 | BFF APIs: CSRF, session fixation, SSRF and credential forwarding | BFF |
 | A5 | Redis and refresh: token theft, stale writes, rotation races and outage | BFF / platform |
-| A6 | Private API entry: JWT forgery/replay and direct-route bypass | Gateway / services |
+| A6 | Service API entry: JWT forgery/replay and unapproved caller access | Service teams |
 | A7 | Business APIs: object access bypass, injection and over-posting | Service teams |
 | A8 | Policy, data and audit: privilege escalation, exfiltration or repudiation | Data / security |
 | A9 | Kubernetes and CI/CD: malicious deployment, secret theft and lateral movement | Platform / DevSecOps |
@@ -519,11 +529,11 @@ Assume that the browser and supplied headers are untrusted, that internal worklo
 
 **Verify and detect:** unauthorized workloads cannot connect; raw stored token fields are unreadable without keys; concurrent refresh and injected crash/lease/failover tests do not grant access from uncertain state. Alert on store errors and refresh contention. **Owner:** BFF/platform. **Residual risk:** Redis replication and IdP rotation are not one atomic transaction; safe recovery may require login again.
 
-### A6 Private gateway and bearer credentials
+### A6 Service API and bearer credentials
 
-**Attack:** forged, expired, wrong-audience or replayed tokens reach an API, or a caller bypasses the gateway and spoofs a trusted header. **Mitigation:** issuer/audience/signature/algorithm/time validation at gateway and every service; narrow audiences and permissions; private TLS/workload identity; default-deny network rules; no unsigned identity-header trust; and an explicit revocation SLA. Evaluate sender-constrained tokens when bearer replay risk requires stronger assurance.
+**Attack:** forged, expired, wrong-audience or replayed tokens reach an API, or an unapproved workload reaches a service and spoofs a trusted header. **Mitigation:** issuer/audience/signature/algorithm/time validation at every service; gateway checks are optional defence in depth; narrow audiences and permissions; private TLS/workload identity; default-deny network rules; no unsigned identity-header trust; and an explicit revocation SLA. Evaluate sender-constrained tokens when bearer replay risk requires stronger assurance.
 
-**Verify and detect:** invalid JWT variants return 401; direct unapproved network paths fail; a valid user still cannot exceed operation or resource policies. Detect verification spikes and forbidden-route attempts without logging JWTs. **Owner:** gateway/service teams. **Residual risk:** a stolen valid bearer token may work until expiry or enforced revocation.
+**Verify and detect:** invalid JWT variants return 401; direct unapproved network paths fail; a valid user still cannot exceed operation or resource policies. Detect verification spikes and forbidden-route attempts without logging JWTs. **Owner:** service teams. **Residual risk:** a stolen valid bearer token may work until expiry or enforced revocation.
 
 ### 13. Attack paths in business data and deployment
 
@@ -537,7 +547,7 @@ Assume that the browser and supplied headers are untrusted, that internal worklo
 
 **Attack:** an excessive grant, changed policy or overprivileged database account elevates access or removes evidence. **Mitigation:** separate authorization administration from business operation roles; require approvals for high-impact changes; constrain DB accounts; encrypt connections/backups; version and audit policy changes; invalidate decision caches; restrict audit deletion and protect retention. Keep business decisions and audit/outbox writes transactional where required.
 
-**Verify and detect:** operational users cannot edit mappings; policy changes invalidate cached access within the agreed SLA; restored backups and audit records preserve integrity controls. Alert on privileged grants, unusual queries and audit pipeline gaps. **Owner:** security/data teams. **Residual risk:** a powerful administrator may retain damaging capabilities; use separation of duties, privileged access reviews and independent evidence storage.
+**Verify and detect:** operational users cannot edit mappings; policy changes reach service evaluators and invalidate stale policy/grant state within the agreed SLA; restored backups and audit records preserve integrity controls. Alert on privileged grants, unusual queries and audit pipeline gaps. **Owner:** security/data teams. **Residual risk:** a powerful administrator may retain damaging capabilities; use separation of duties, privileged access reviews and independent evidence storage.
 
 ### A9 Kubernetes administration secrets and delivery
 
@@ -551,7 +561,7 @@ Assume that the browser and supplied headers are untrusted, that internal worklo
 
 1. Record the commit, provider/realm configuration, policy version and environment. Sign in across different BFF replicas and prove that the browser receives no OAuth tokens.
 
-2. Exercise both microservices. Correlate one request through public edge, BFF, private gateway, evaluator and service. Verify cookie-to-bearer conversion without printing credentials.
+2. Exercise both microservices. Correlate one request through public edge, BFF and resource-owning service; correlate policy distribution/version independently. Verify cookie-to-bearer conversion without printing credentials.
 
 3. Run A1-A9 checks in an authorized test environment. For each denial, verify both the HTTP result and the absence of an unauthorized committed mutation. Network denial and application denial are separate evidence.
 

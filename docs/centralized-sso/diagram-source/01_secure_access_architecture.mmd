@@ -1,26 +1,9 @@
 flowchart TD
-  subgraph Public["Browser and public entry"]
-    UI["A1 React shell and microfrontends"]
-    LB["A2 WAF and HTTPS load balancer"]
-    PG["Public gateway routes"]
-    IDP["A3 External Keycloak or enterprise IdP"]
-    UI --> LB --> PG
-  end
-  subgraph Private["Private services"]
-    B1["A4 BFF replica 1"]
-    B2["BFF replica 2"]
-    R["A5 Redis shared sessions and encrypted tokens"]
-    IG["A6 Private bearer gateway"]
-    M1["A7 Microservice 1"]
-    M2["Microservice 2"]
-    B1 -.-> R
-    B2 -.-> R
-    B1 -->|Access token| IG
-    B2 -->|Access token| IG
-    IG --> M1
-    IG --> M2
-  end
-  PG -->|Cookie and CSRF| B1
-  PG -->|Cookie and CSRF| B2
-  B1 -. OIDC .-> IDP
-  B2 -. OIDC .-> IDP
+  UI["React microfrontends"] --> Edge["ALB and optional edge gateway"]
+  Edge --> BFF["BFF replicas"]
+  BFF -->|Bearer token| M1["Microservice 1: JWT and local RBAC / ABAC"]
+  BFF -->|Bearer token| M2["Microservice 2: JWT and local RBAC / ABAC"]
+  BFF -.-> Redis["Shared sessions and encrypted tokens"]
+  BFF -. OIDC .-> IdP["Enterprise SSO / Keycloak"]
+  Admin["Authorization management"] -. Versioned policy .-> M1
+  Admin -. Versioned policy .-> M2

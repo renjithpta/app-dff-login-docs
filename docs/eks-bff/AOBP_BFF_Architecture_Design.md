@@ -8,11 +8,11 @@ Establish one clear, secure authentication and authorization architecture for AO
 
 ### The decision in plain language
 
-The React application is the screen the user operates. The Backend for Frontend (BFF) is its trusted server-side companion: it signs the user in through BAC SSO, keeps their tokens safe, and calls backend APIs for them. The browser receives a random session reference, like a claim ticket, rather than an API access token. The private API Gateway directs approved backend requests to the appropriate microservice.
+The React application is the screen the user operates. The Backend for Frontend (BFF) is its trusted server-side companion: it signs the user in through BAC SSO, keeps their tokens safe, and calls backend APIs for them. The browser receives a random session reference, like a claim ticket, rather than an API access token. The BFF calls the selected private microservice directly. Each microservice enforces operation permissions and resource policies using centrally governed authorization data.
 
 ### Scope and source alignment
 
-This rewrite is based on the supplied 10-page AOBP Centralized SSO, Authentication and Authorization PDF. It retains its Objective, High-level architecture, Implementation Approach, Authentication Runtime, Gateway RBAC, Central Security Service, Resource-Level ABAC and Authorization Database topics. The referenced Markdown attachment was unavailable, so its exact contents and formatting have not been verified.
+This rewrite is based on the supplied 10-page AOBP Centralized SSO, Authentication and Authorization PDF. It retains its Objective, High-level architecture, Implementation Approach, Authentication Runtime, Service RBAC, Central Authorization Management, Resource-Level ABAC and Authorization Database topics. The referenced Markdown attachment was unavailable, so its exact contents and formatting have not been verified.
 
 ### What changes from the reviewed design
 
@@ -22,19 +22,19 @@ This rewrite is based on the supplied 10-page AOBP Centralized SSO, Authenticati
 | SPA receives and retains access tokens | BFF receives tokens; browser holds opaque cookie |
 | Browser sends bearer token to gateway | Browser calls BFF; BFF relays token privately |
 | Browser-led token handling | Shared server-side session and controlled refresh |
-| Gateway and central authorization | Retained, with independent service enforcement |
+| Gateway-centric business decisions | Central administration with service-local RBAC and ABAC |
 
 No local user accounts: AOBP does not create passwords or become a second identity directory. Minimal session claims and issuer/subject references are permitted for runtime security and audit. Authorization configuration and access-scope grants remain AOBP responsibilities.
 
 ## 2. High-level architecture
 
-Decision: place the BFF behind the AWS Application Load Balancer (ALB), and before the private API Gateway on the browser business path. Both run in private EKS worker subnets. The UI remains a separately deployed React microfrontend application, exposed through the same origin as its BFF.
+Decision: place the BFF behind the AWS Application Load Balancer (ALB) and optional public edge gateway. The BFF calls microservices directly over the private network. Each service evaluates RBAC and ABAC; an internal gateway is optional for separately justified traffic controls. The UI remains a separately deployed React microfrontend application, exposed through the same origin as its BFF.
 
-![Figure 1. Browser business traffic passes through the BFF before the private gateway. Static assets and IdP redirects use separate routes.](diagrams/01_secure_access_architecture.png)
+![Figure 1. Browser business traffic passes through the BFF directly to a private microservice. Central policy distribution is separate from the business request path.](diagrams/01_secure_access_architecture.png)
 
-Figure 1. Browser business traffic passes through the BFF before the private gateway. Static assets and IdP redirects use separate routes.
+Figure 1. Browser business traffic passes through the BFF directly to a private microservice. Central policy distribution is separate from the business request path.
 
-The ALB is the first network entry point. The BFF is the first application component that handles browser authentication and protected API calls. The API Gateway is the internal API entry point after the BFF. These are distinct responsibilities, so the answer depends on which boundary is being discussed.
+The ALB is the first network entry point. The BFF is the first application component that handles browser authentication and protected API calls. An optional public edge gateway may route to the BFF. An internal gateway is not required for business authorization. These are distinct responsibilities, so the answer depends on which boundary is being discussed.
 
 ## 2.1 Components, responsibilities and benefits
 
@@ -45,9 +45,9 @@ The ALB is the first network entry point. The BFF is the first application compo
 | AWS WAF + ALB | Filter and balance HTTPS traffic; route static files, BFF routes and OIDC callbacks. No business RBAC. |
 | BFF replicas | Confidential OIDC client, session lifecycle, token refresh, allowlisted proxy and token relay. |
 | Redis | Shared sessions, login transaction state, authorized-client tokens, refresh coordination and logout state. |
-| Private API Gateway | Validate API tokens, apply route/operation RBAC, throttling and internal routing. |
-| Central Security Service | Resolve trusted entitlements, map roles, evaluate versioned RBAC/ABAC policy. |
-| Microservices | Validate tokens independently; enforce resource access and business rules before reads/writes. |
+| Optional gateway | Edge routing, rate limits and optional coarse token/scope checks; not authoritative business RBAC. |
+| Authorization Management Service | Manage and distribute approved role mappings, permissions, policies and scope grants to service-local evaluators. |
+| Microservices | Validate tokens independently; enforce both operation RBAC and resource ABAC plus business rules before reads/writes. |
 | Authorization Database | Persist roles, permissions, mappings, policies, scope grants and change audit. |
 
 ### Architecture principles
@@ -56,7 +56,7 @@ Identity-centric security: BAC authenticates; AOBP authorizes. Least privilege: 
 
 ### Benefits and trade-offs
 
-A compromised browser script cannot directly read server-held OAuth tokens. Shared Redis state lets any healthy BFF replica serve a session. A private gateway gives one controlled API boundary for multiple backends. Costs are one additional application hop, Redis dependency, CSRF protection and careful distributed refresh. The BFF reduces token theft exposure; it does not stop malicious JavaScript from performing actions through an active user session.
+A compromised browser script cannot directly read server-held OAuth tokens. Shared Redis state lets any healthy BFF replica serve a session. Direct BFF-to-service calls avoid a mandatory private-gateway hop and synchronous policy dependency. Costs include consistent local policy evaluation, bounded policy/entitlement freshness, Redis dependency, CSRF protection and careful distributed refresh. The BFF reduces token theft exposure; it does not stop malicious JavaScript from performing actions through an active user session.
 
 ## 2.2 AWS EKS placement and routing
 
@@ -68,7 +68,7 @@ Figure 5. ALB balances to private pod IP targets. Gateway and business services 
 | --- | --- |
 | Edge | Route 53 DNS, WAF-associated ALB, ACM certificate and HTTPS 443. Use an internal ALB for private-only BAC access; otherwise an internet-facing ALB in public subnets. |
 | EKS ingress | AWS Load Balancer Controller reconciles Kubernetes Ingress into ALB listeners and target groups. Use target-type ip. The controller is not a request proxy. |
-| Private compute | UI, BFF, gateway, security service and microservices use Deployments and ClusterIP Services. No public NodePorts or service LoadBalancers for internal APIs. |
+| Private compute | UI, BFF, any optional edge gateway, authorization management and microservices use Deployments and ClusterIP Services. No public NodePorts or service LoadBalancers for internal APIs. |
 | Private data | Managed Redis and RDS in private data subnets; security groups permit only necessary callers. |
 | Encryption | TLS to ALB and HTTPS ALB targets. Use workload TLS/mTLS with certificate validation for internal calls; ALB HTTPS target encryption alone is not pod identity verification. |
 
@@ -91,15 +91,15 @@ Example origin: https://aobp.example.com. This is an illustrative hostname, to b
 
 ```text
 Browser: POST https://aobp.example.com/bff/api/v1/resources/123
-BFF:     POST https://api-gateway.aobp.svc.cluster.local/api/v1/resources/123
-Gateway: POST https://microservice-1.aobp.svc.cluster.local/api/v1/resources/123
+BFF:     POST https://microservice-1.aobp.svc.cluster.local/api/v1/resources/123
+Service: JWT validation -> local RBAC -> resource ABAC -> transaction
 ```
 
 Ingress sends BFF and OIDC paths to the BFF with higher priority than the UI catch-all. The BFF strips only the /bff prefix and chooses a fixed configured destination. Browser-supplied URLs, arbitrary hosts and arbitrary proxy paths are rejected. Private service DNS is resolvable only on the controlled backend network.
 
-### Why the gateway is after the BFF
+### Why a private gateway is optional
 
-This order makes the BFF the sole browser session owner and removes browser tokens from API calls. A gateway in front of a BFF can be valid when an enterprise edge gateway is mandated, but it adds another edge policy layer. It is not required for this recommendation. ALB supplies the edge routing; the Spring Cloud Gateway supplies private API routing and API policy.
+The BFF owns browser OAuth and sessions; services own business authorization. A gateway before the BFF may provide enterprise routing/traffic controls. An internal gateway may serve justified API-management requirements, but adding one solely to enforce RBAC duplicates service responsibilities. The selected default route is ALB -> optional edge gateway -> BFF -> private service.
 
 ## 3. Implementation Approach
 
@@ -151,7 +151,7 @@ Persist issuer, entitlement type and stable external entitlement ID. Display nam
 
 ### Step 6 - Define business permissions
 
-Use stable permissions such as DATA.READ, DATA.UPDATE, APPROVAL.SUBMIT and APPROVAL.APPROVE. They describe business actions independently of microservice names. The gateway obtains required permission from a trusted method-and-route mapping, never a browser header.
+Use stable permissions such as DATA.READ, DATA.UPDATE, APPROVAL.SUBMIT and APPROVAL.APPROVE. They describe business actions independently of microservice names. Each service obtains the required permission from its controlled operation mapping, never a browser header.
 
 ### Step 7 - Assign role permissions (RBAC)
 
@@ -184,7 +184,7 @@ BAC credentials are entered at BAC SSO, not the BFF. If Keycloak brokers BAC, AO
 | Credential / data | Where it lives and where it travels |
 | --- | --- |
 | Session cookie | Browser cookie jar and BFF only. Contains opaque random session reference, never OAuth tokens. |
-| Access token | Encrypted server-side authorized-client store; sent in Authorization header from BFF to gateway and services. |
+| Access token | Encrypted server-side authorized-client store; sent in Authorization header directly from BFF to the configured service. |
 | Refresh token | Server-side store; sent only from BFF to IdP token endpoint. |
 | ID token | BFF authentication context. Not used as an API bearer token. |
 | CSRF token | Session-bound value available to React and sent as X-CSRF-TOKEN on unsafe requests. Not an OAuth token. |
@@ -205,50 +205,51 @@ Serve a restrictive Content Security Policy, safe output encoding and approved s
 
 Same-origin requests need no permissive CORS policy. If cross-origin deployment becomes necessary, explicitly allow approved origins with credentials, never wildcard origin plus credentials, and re-evaluate cookie behavior. Keep bearer tokens out of browser storage, URLs, HTML, postMessage and logs.
 
-## 5. Gateway RBAC Authorization
+## 5. Service Level RBAC Authorization
 
-![Figure 3. A protected update requires valid identity, operation permission and resource scope. Response arrows are simplified to show the return through the same proxy chain.](diagrams/03_business_request.png)
-
-Figure 3. A protected update requires valid identity, operation permission and resource scope. Response arrows are simplified to show the return through the same proxy chain.
+![Figure 3. Each microservice validates identity and evaluates RBAC plus ABAC before business work.](diagrams/03_business_request.png)
 
 ### Request processing in order
 
-1. The BFF validates session, CSRF and the allowlisted route. 2. It retrieves the current authorized-client tokens, refreshing if necessary. 3. It removes browser Cookie, Authorization and user/role/permission headers; it creates its own Authorization: Bearer access-token header. 4. The gateway validates the token and maps HTTP method plus normalized route to a required business permission. 5. The Central Security Service evaluates trusted entitlements and role permissions. 6. Deny returns 403 before reaching the business operation. 7. If allowed, the gateway forwards to the fixed internal service. 8. The service validates the JWT again and evaluates resource-level policy before accessing or changing data.
+1. The BFF validates session, CSRF and the fixed route/destination.
+2. It obtains a usable authorized-client access token, refreshing server-side if necessary.
+3. It constructs a new private TLS request directly to the selected service, stripping browser Cookie, Authorization and spoofable identity metadata.
+4. The service validates signature, issuer, audience, algorithm, expiry and required claims.
+5. The service checks policy/entitlement freshness and evaluates the operation's required business permission locally.
+6. It reads authoritative resource attributes and checks scope/ownership/state policies.
+7. On allow, it validates input and commits with concurrency and audit controls. Deny is 403; missing/expired mandatory policy data is 503 with no mutation.
 
-Strip untrusted forwarding headers at the edge and trust proxy metadata only from known hops. Forward a validated or regenerated correlation/trace ID. Do not forward browser cookies, refresh tokens, ID tokens or raw permission claims as trusted identity headers.
+## 5.1 Central Authorization Management
 
-## 5.1 Central Security Service evaluates RBAC
+### Central administration with local enforcement
 
-### Authoritative decision process
+The Authorization Management Service owns versioned role definitions, issuer-scoped entitlement mappings, permissions, named policies and scope grants. It authenticates service workloads and publishes approved, signed/versioned policy bundles or authenticated snapshots. It is a control-plane component, not a required synchronous hop for every business request. Each service validates the configured publisher/signature and schema, enforces version/validity bounds, and evaluates both RBAC and ABAC locally. Spring services may use shared policy classes; polyglot services may use a local policy evaluator with the same versioned contract. Domain services own their resource-specific rules.
 
-Validate tokens locally at gateway and services using trusted issuer metadata/JWKS, or approved introspection for opaque tokens. Pin the accepted issuer and audiences; restrict algorithms and reject unsigned tokens. Cache signing keys with controlled refresh for unknown key IDs. Do not download discovery/JWKS locations from untrusted token input.
+Policies use stable permission names, independent of service deployment names. A service selects the required permission from its controlled operation mapping. It supplies the verified issuer/subject, trusted entitlements and authoritative resource attributes; the browser cannot select its actor, policy, permission or scope grant. Query, bulk and export paths enforce the same rules.
 
-The Central Security Service authenticates its callers and binds each decision to a validated subject: either it validates the relayed access token itself or accepts a protected, authenticated assertion from a trusted enforcement point. A plain subject field or X-User header is insufficient.
+Policy distribution uses change notifications plus periodic reconciliation and a bounded maximum age. A service may continue using a last-known-good snapshot only while it remains explicitly valid and permitted by policy. Missing, invalid or expired mandatory policy/entitlement data causes a controlled 503 with no business mutation; a valid policy denial is 403. Sensitive operations can require a fresh entitlement check through an authenticated central endpoint under a documented availability contract.
 
-| Evaluation | Required result |
-| --- | --- |
-| Identity | Trusted issuer + subject, token validity and permitted client/token type |
-| Entitlements | Trusted groups/roles resolved; unknown mandatory data causes deny |
-| Role mapping | External issuer + stable entitlement IDs resolve approved AOBP roles |
-| Permission | At least one allowed role grants the required operation, subject to deny rules |
-| Policy | Current policy version, contextual restrictions and separation-of-duty checks |
-| Decision | ALLOW or DENY with reason code, decision ID and policy version |
+Log policy version, entitlement source/freshness and a safe decision reason. Revocation targets must cover token claim age, policy/grant caches and notification delay. Refreshing a policy bundle does not remove stale group claims from an existing JWT; meeting a tighter SLA requires token revocation, fresh entitlement resolution or reauthentication. Never silently extend validity during an outage.
 
-### Availability and policy freshness
+### Token relay and enforcement details
 
-Run at least two Security Service replicas across zones. Cache decisions only with a documented lifetime and key including issuer, subject, operation, relevant context and policy version. Proposed maximum cache lifetime is 30 seconds for normal operations; use fresh decisions for sensitive administration and approvals. These are design targets, not measured performance.
+Token relay forwards the current user's **access token** in `Authorization: Bearer ...`; it does not grant permission by itself. Each service acts as an OAuth resource server and validates the configured issuer, signature/allowed algorithm, intended audience and time claims. An ID token authenticates the BFF login; it is not an API credential. A refresh token is sent only to the provider token endpoint.
 
-Publish policy-change invalidations and retain a bounded fallback TTL. A denied decision is 403. If the required policy cannot be evaluated because its dependency is unavailable, fail closed with 503; do not silently allow. If offline evaluation is needed, explicitly approve a signed versioned policy bundle and its maximum permitted staleness.
+For Spring services, enable method authorization explicitly with `@EnableMethodSecurity`; adding the security starter alone does not enable it. Apply operation authorization at the application/service layer, with a trusted permission resolver or `AuthorizationManager`. Map provider groups/roles through the governed entitlement contract; default `SCOPE_` authorities do not automatically become AOBP business permissions. Resource authorization loads authoritative data inside the protected use case, with transaction/version checks before mutation. Account for proxy/self-invocation boundaries when using annotation-based enforcement.
+
+Every path must follow the same rules: REST controllers, service-to-service requests, background workload identities, list/export queries and WebSocket subscriptions/messages. Authenticate long-lived connection establishment and re-evaluate applicable session, permission and resource constraints for subsequent operations. Enforce query scope before pagination/count/export, not by hiding records in the UI.
+
+These are implementation requirements and design choices, not a claim that one framework annotation or an API gateway automatically provides complete authorization. Verify behaviour against the supported framework/IdP versions selected for deployment. Reviewed primary references on 2 November 2026: [Spring method security](https://docs.spring.io/spring-security/reference/servlet/authorization/method-security.html), [JWT resource server](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html), and [OWASP authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html).
 
 ### Status contract
 
-401 means no valid authentication; the UI may initiate a new login. 403 means authenticated but not permitted; refreshing a token does not solve it. 503 means a required dependency is unavailable. Return structured errors with code, safe message and traceId, without stack traces or credentials.
+401 means no valid authentication; 403 means a valid identity lacks permission or scope; 503 means mandatory security data is unavailable/expired or another required dependency failed. Normal policy-management outages need not stop requests while a last-known-good snapshot remains explicitly valid. Sensitive operations follow their stricter freshness contract. Never extend policy validity silently.
 
 ## 6. Resource-Level ABAC Authorization
 
 ### Example: identical role, different terminal
 
-User A is an OPERATOR permitted for Terminal T1. They request an update to resource 123. The gateway permits DATA.UPDATE. Microservice 1 loads resource 123 from its database and discovers that it belongs to Terminal T2. The security policy denies access because T2 is outside the user scope. Final result: 403; no business change occurs.
+User A is an OPERATOR permitted for Terminal T1. They request an update to resource 123. Microservice 1 locally confirms DATA.UPDATE using its valid policy snapshot. Microservice 1 loads resource 123 from its database and discovers that it belongs to Terminal T2. The security policy denies access because T2 is outside the user scope. Final result: 403; no business change occurs.
 
 | Check | Example outcome |
 | --- | --- |
@@ -261,7 +262,7 @@ User A is an OPERATOR permitted for Terminal T1. They request an update to resou
 
 ### Where enforcement belongs
 
-The gateway cannot reliably make the final object-level decision because it does not own current resource data. Each service must enforce access before returning records or committing changes. The service constructs resource attributes from trusted business data and requests the shared policy decision. It never trusts a terminal field supplied only by the browser.
+The gateway cannot reliably make the final object-level decision because it does not own current resource data. Each service must enforce access before returning records or committing changes. The service constructs resource attributes from trusted business data and evaluates the governed policy locally. It never trusts a terminal field supplied only by the browser.
 
 For lists and searches, apply scope filters in the query before pagination and aggregation. For exports and bulk changes, authorize the whole selection and every affected resource; enforce volume/rate limits. For creates, validate the target terminal against user scope before insert. For moves between terminals, require access to the source and destination plus the specific transfer permission.
 
@@ -355,7 +356,7 @@ If an integration truly acts for a user, use an approved delegated/OBO/token-exc
 
 ### WebSocket behavior
 
-The browser opens wss://aobp.example.com/bff/ws. BFF authenticates the session cookie and validates the exact Origin before upgrade. It opens a controlled backend connection through the gateway with a server-added Authorization header. The browser WebSocket API cannot set arbitrary Authorization headers, so do not put OAuth tokens in query parameters.
+The browser opens wss://aobp.example.com/bff/ws. BFF authenticates the session cookie and validates the exact Origin before upgrade. It opens a controlled direct backend connection with a server-added Authorization header. The browser WebSocket API cannot set arbitrary Authorization headers, so do not put OAuth tokens in query parameters.
 
 A connection upgrade is authenticated once; every subscription/message still needs authorization. Cap connection lifetime, periodically recheck session/revocation and close connections on logout/expiry. Token refresh does not automatically reauthenticate an existing backend WebSocket. Define a reconnect/re-authentication protocol before token or session expiry. Configure ALB idle timeout, heartbeats, connection draining and gateway upgrade routing, then test reconnect across replicas.
 
@@ -379,15 +380,15 @@ Figure 6. Defense in depth across browser, login, session store and private API 
 
 ### Kubernetes controls
 
-Run UI, BFF, gateway and Security Service with at least two replicas spread over Availability Zones. Use topology spread constraints, readiness/startup/liveness probes, PodDisruptionBudgets and graceful termination. Start BFF at 2 replicas, gateway at 2 and Security Service at 2; these are availability baselines, not capacity sizing. Set CPU/memory requests and limits using measured load, and scale with HPA including latency/connection metrics where useful.
+Run UI, BFF, optional edge gateway and Authorization Management Service with at least two replicas spread over Availability Zones. Use topology spread constraints, readiness/startup/liveness probes, PodDisruptionBudgets and graceful termination. Start BFF at 2 replicas, optional gateway at 2 and Authorization Management Service at 2; these are availability baselines, not capacity sizing. Set CPU/memory requests and limits using measured load, and scale with HPA including latency/connection metrics where useful.
 
-Use default-deny ingress and egress NetworkPolicies with an enforcing CNI configuration. Explicitly allow ALB target traffic, BFF-to-gateway, gateway-to-service, service-to-policy, BFF-to-Redis, service-to-DB, DNS and approved IdP/telemetry egress. Native NetworkPolicy cannot generally express an IdP FQDN; use supported egress controls/proxy and account for changing provider addresses. Security groups constrain ALB targets and data stores.
+Use default-deny ingress and egress NetworkPolicies with an enforcing CNI configuration. Explicitly allow ALB target traffic, edge-to-BFF where used, BFF-to-service, service-to-policy-distribution, BFF-to-Redis, service-to-DB, DNS and approved IdP/telemetry egress. Native NetworkPolicy cannot generally express an IdP FQDN; use supported egress controls/proxy and account for changing provider addresses. Security groups constrain ALB targets and data stores.
 
 Apply non-root containers, read-only root filesystems where feasible, dropped Linux capabilities, seccomp and restricted Pod Security admission. Use EKS Pod Identity/IRSA rather than static AWS keys. Restrict control-plane access, Kubernetes RBAC and secret access. Pin supported image versions, scan dependencies and containers, sign artifacts, and promote identical images through environments. If Istio is used, enforce strict mTLS and workload authorization policies; JWT and business authorization remain required.
 
 ### Monitoring without leaking credentials
 
-Propagate W3C trace context through BFF, gateway, services and policy calls. Log UTC time, traceId, service, route template, operation, outcome, latency, policyVersion and decisionId. Audit role/policy changes, auth outcomes, denied access, refresh failure, logout, exports and administrative actions. Minimize or pseudonymize issuer/subject according to retention policy.
+Propagate W3C trace context through BFF, gateway, services and policy distribution and optional explicit fresh-entitlement calls. Log UTC time, traceId, service, route template, operation, outcome, latency, policyVersion and decisionId. Audit role/policy changes, auth outcomes, denied access, refresh failure, logout, exports and administrative actions. Minimize or pseudonymize issuer/subject according to retention policy.
 
 Never log Authorization, Cookie, Set-Cookie, tokens, PKCE verifier, client secret or OIDC code/state query values. Redact at ALB/edge access-log handling as well as application instrumentation. Restrict access to unavoidable sensitive edge logs and set retention. Alert on 401/403 spikes, reuse detection, refresh contention, Redis latency, policy timeouts and unexpected routes.
 
@@ -439,7 +440,7 @@ OAuth sessions and refresh tokens are transient security state in the protected 
 
 ### Delivery sequence
 
-Phase 1: agree BAC IdP, origin, client/audience registration, session limits and revocation target. Phase 2: implement BFF login/session/CSRF and shared authorized-client persistence. Phase 3: enforce private gateway routes and service RBAC/ABAC, then distributed refresh and logout. Phase 4: add integration/WebSocket controls, perform attack-path tests and load/failover tests. Phase 5: pilot, monitor, then retire the SPA token path and its public OAuth registration if no longer used.
+Phase 1: agree BAC IdP, origin, client/audience registration, session limits and revocation target. Phase 2: implement BFF login/session/CSRF and shared authorized-client persistence. Phase 3: enforce direct private service routes, policy distribution and service-local RBAC/ABAC, then distributed refresh and logout. Phase 4: add integration/WebSocket controls, perform attack-path tests and load/failover tests. Phase 5: pilot, monitor, then retire the SPA token path and its public OAuth registration if no longer used.
 
 This document is a proposed target architecture and implementation specification. It does not claim that the current application or EKS cluster already implements or passes these controls. Final pod resources, throughput targets and DR objectives require measured workload and BAC service requirements.
 
@@ -448,10 +449,10 @@ This document is a proposed target architecture and implementation specification
 | Decision | Reason and consequence |
 | --- | --- |
 | BFF owns browser OAuth | Avoid browser bearer-token exposure; adds session/CSRF responsibilities |
-| ALB -> BFF -> private gateway | Clear browser trust boundary; one extra hop for central API policy |
+| ALB -> optional edge gateway -> BFF -> private services | Clear session boundary with no mandatory internal authorization proxy |
 | Separate UI deployment, same origin | Independent releases with simpler cookies and routing |
 | Shared Redis + explicit token repository | Replica independence; state-store outage requires controlled failure |
-| RBAC at gateway, resource checks at service | Early deny plus authoritative object-level protection |
+| RBAC and ABAC at each service | One authoritative resource-owning enforcement point; centrally managed policy prevents drift |
 | Separate machine API entry | Client credentials and scopes without browser cookies |
 | Re-login after uncertain refresh / DR | Prioritize credential consistency over invisible session continuity |
 

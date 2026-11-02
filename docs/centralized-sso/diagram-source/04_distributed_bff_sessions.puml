@@ -1,0 +1,20 @@
+@startuml
+skinparam shadowing false
+skinparam ParticipantBackgroundColor #FFF0A8
+skinparam ActivationBackgroundColor #FFF6D2
+skinparam ArrowColor #484334
+autonumber
+participant "Browser" as P0
+participant "BFF replica 1" as P1
+participant "BFF replica 2" as P2
+participant "Redis" as P3
+P0 -> P1: Start login through public edge
+P1 -> P3: Shared pending OIDC state
+P0 -> P2: Callback reaches replica 2
+P2 -> P3: Read shared state
+P2 -> P3: Store rotated session and tokens
+P2 --> P0: Cookie and UI redirect
+P0 -> P1: API request reaches replica 1
+P1 -> P3: Read same committed session
+P1 --> P0: Authorized API response
+@enduml

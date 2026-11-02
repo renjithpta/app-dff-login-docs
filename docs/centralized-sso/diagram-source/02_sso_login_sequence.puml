@@ -1,0 +1,25 @@
+@startuml
+skinparam shadowing false
+skinparam ParticipantBackgroundColor #FFF0A8
+skinparam ActivationBackgroundColor #FFF6D2
+skinparam ArrowColor #484334
+autonumber
+participant "Browser" as P0
+participant "Public edge" as P1
+participant "BFF replica" as P2
+participant "Redis" as P3
+participant "Identity Provider" as P4
+P0 -> P1: GET login
+P1 -> P2: Route login
+P2 -> P3: Save state
+P2 --> P0: 302 to provider
+P0 -> P4: Login and MFA
+P4 --> P0: 302 callback with code
+P0 -> P1: GET callback
+P1 -> P2: Route code
+P2 -> P3: Check state
+P2 -> P4: Code and verifier
+P4 --> P2: Tokens
+P2 -> P3: Save session
+P2 --> P0: Cookie and 302 UI
+@enduml

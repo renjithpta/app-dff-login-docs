@@ -9,7 +9,7 @@ sequenceDiagram
     P0->>P2: Callback reaches replica 2
     P2->>P3: Read shared state
     P2->>P3: Store rotated session and tokens
-    P2->>P0: Cookie and UI redirect
+    P2-->>P0: Cookie and UI redirect
     P0->>P1: API request reaches replica 1
     P1->>P3: Read same committed session
-    P1->>P0: Authorized API response
+    P1-->>P0: Authorized API response

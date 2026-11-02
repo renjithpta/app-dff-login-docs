@@ -13,18 +13,23 @@
     },
     {
       "path": "README.md",
-      "bytes": 3849,
-      "sha256": "6bed7b7894fe7eb9f874eddf97e2df791ee280e58d62d49daeda697894c72843"
+      "bytes": 4695,
+      "sha256": "52d22595eaac4f0d24758077f9c2916f8cdf458ad0669b3051ad2e7aacaf377b"
+    },
+    {
+      "path": "docs/authorization-decision.md",
+      "bytes": 4046,
+      "sha256": "dfc71ec718844807f42b04079fa3d192e6baf7f90c99bff83eecdfc35f06ed82"
     },
     {
       "path": "docs/centralized-sso/AOBP_BFF_Centralized_SSO_Architecture.md",
-      "bytes": 50499,
-      "sha256": "a26acc3bbc6344625740bcb55af071cac3a6299f0356160665aff73cc17ab50c"
+      "bytes": 54068,
+      "sha256": "d9e223ddd038faa0e00542510077826c441fecc764fd61e12e0ec3fe9ce3b97a"
     },
     {
       "path": "docs/centralized-sso/AOBP_BFF_Centralized_SSO_Architecture.pdf",
-      "bytes": 139588,
-      "sha256": "7c634d66f85c1eabc940bd3d214d69df0a2d6aa60c8db0dabfcf9d5dff3da1bd"
+      "bytes": 2196804,
+      "sha256": "418b4e2577552faf025d15e50e0736d600b9165da6dc9c9829313aaafa55c7af"
     },
     {
       "path": "docs/centralized-sso/README.md",
@@ -32,159 +37,189 @@
       "sha256": "10d25da33721be130b0d7b6a35011ec47666c29d013ffe8733d0c4d0654e64af"
     },
     {
+      "path": "docs/centralized-sso/diagram-source/01_secure_access_architecture.drawio",
+      "bytes": 4950,
+      "sha256": "8e689598655d6b0c82b92d8e504ac81d06aab74f6ed4fe4ad3f52492f0aa6b37"
+    },
+    {
       "path": "docs/centralized-sso/diagram-source/01_secure_access_architecture.mmd",
-      "bytes": 705,
-      "sha256": "e7fb260decbf7e540a6fafdcbcaf8a2db2eecee0c9f592a2919e7f96604a2040"
+      "bytes": 465,
+      "sha256": "ba4d7fb29233c05254a756b0d546137573f3a75cca312cec85112d254969faf1"
     },
     {
       "path": "docs/centralized-sso/diagram-source/02_sso_login_sequence.mmd",
-      "bytes": 544,
-      "sha256": "da02bf77cb6f9011a04418fff0453799d483dc53950d701f9e90898e2d883507"
+      "bytes": 548,
+      "sha256": "bee00d264d849b96b0c6351f2fcf9709dc070ec94773d9ebc5fce36647a05871"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/02_sso_login_sequence.puml",
+      "bytes": 641,
+      "sha256": "8a52a97473a3f2f165fc9255f3ac23caa4c008a66305f32ce490e9af8a604a66"
     },
     {
       "path": "docs/centralized-sso/diagram-source/03_token_relay_sequence.mmd",
-      "bytes": 538,
-      "sha256": "857433705572db487fb1460639b54a0ce328a9462fab4e16245c2319213fac6f"
+      "bytes": 510,
+      "sha256": "a1f1e1fde16e419d76e1fff4e0c1bd061f36d002ae603544b83a79e706114fd9"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/03_token_relay_sequence.puml",
+      "bytes": 608,
+      "sha256": "7466ee66a70267ef5182f0c94016a8b6b5ebe5adcebd3507ec749323c5301d92"
     },
     {
       "path": "docs/centralized-sso/diagram-source/04_distributed_bff_sessions.mmd",
-      "bytes": 519,
-      "sha256": "19c347d9496e0262a0b5b90195849ce508afe4b69285b61973982ee148bae2e4"
+      "bytes": 521,
+      "sha256": "d71eac49040b28798ec6684763106404797b8a870f55af09e3aa42bba37fc3ef"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/04_distributed_bff_sessions.puml",
+      "bytes": 628,
+      "sha256": "98a348af6ec408b4d745186add4972934873de05762113e9ba574319d7c22005"
     },
     {
       "path": "docs/centralized-sso/diagram-source/05_token_refresh_sequence.mmd",
-      "bytes": 438,
-      "sha256": "4b499b68d82105c1392b7411c1f577133d90d173e6b411260da2c2637647e714"
+      "bytes": 439,
+      "sha256": "04327aa0a9852145b2c0db6a6672d4755068707130eb654ccddfb22f0294f5de"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/05_token_refresh_sequence.puml",
+      "bytes": 546,
+      "sha256": "43bd0e4b396a56121c71ec645e9a6da17b44955c6bb44dfb57d3f02e7638f96f"
     },
     {
       "path": "docs/centralized-sso/diagram-source/06_request_activity_and_denials.mmd",
-      "bytes": 502,
-      "sha256": "4655efa9efaafdd2f7e2b28f398fada4faa3cc9de04c2965d6f067aa8949ab9e"
+      "bytes": 559,
+      "sha256": "4460c74cbea6e765e253cfd8694bbc6700344ed007363ad4f16ebd1e2238acb8"
     },
     {
       "path": "docs/centralized-sso/diagram-source/07_logout_sequence.mmd",
-      "bytes": 444,
-      "sha256": "46168d87d44c3880b6bf89da3644244b86a7698518a4d6096ec786ce2291a026"
+      "bytes": 447,
+      "sha256": "2355619f2252203d6bdcff3a74b62393e70e53e4b398ce7f7848f15f0caabb55"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/07_logout_sequence.puml",
+      "bytes": 557,
+      "sha256": "d8d9bfa1dae5ed0ff2e83eaca5f7d4112b9017fad7056d4b057a403cc03070cd"
     },
     {
       "path": "docs/centralized-sso/images/01_secure_access_architecture.png",
-      "bytes": 405247,
-      "sha256": "0f55cd20c83d6f3371b8923a9bae45f795c525ecc956237085ba0b0e314e77d0"
+      "bytes": 363105,
+      "sha256": "9e8b0865ec6fff4766c90906b323269396869a2a8d04a820d5305a0aae975bc8"
     },
     {
       "path": "docs/centralized-sso/images/02_sso_login_sequence.png",
-      "bytes": 265461,
-      "sha256": "c1e228ad866b6dfb62efae3880b32a6929462a811b3d61d3740a566942d263e0"
+      "bytes": 226735,
+      "sha256": "1d53ed3f24999d116f6ceee104be17dec17e27d6cf6d4340e3986d6842b669f4"
     },
     {
       "path": "docs/centralized-sso/images/03_token_relay_sequence.png",
-      "bytes": 267971,
-      "sha256": "de00d3b1ff4d1d6286cbe9b52596f3ab1bffbc9a334ef139b485e4eda0ee32f8"
+      "bytes": 215259,
+      "sha256": "4373e1af4d9b0d2da7517d03ad75bfe35c32a553642e8f9b3e1fd87b0f092fe7"
     },
     {
       "path": "docs/centralized-sso/images/04_distributed_bff_sessions.png",
-      "bytes": 254829,
-      "sha256": "86f67f049af421ad1db75ae13df6b9125f43f4f6285a44998e6429f1fd941e54"
+      "bytes": 207216,
+      "sha256": "d08bb61dca14990fce577dd91c5ecd031dbd1d2fd092b47bc45371a78aa401eb"
     },
     {
       "path": "docs/centralized-sso/images/05_token_refresh_sequence.png",
-      "bytes": 236361,
-      "sha256": "0f6ec15ad32c792af03e43d100c3583ab7806a2b7718f862796820e56ec1780a"
+      "bytes": 190394,
+      "sha256": "6bb6efaa3aa518b80a602764211692859fa3f6283338441f36fab4102d7ef127"
     },
     {
       "path": "docs/centralized-sso/images/06_request_activity_and_denials.png",
-      "bytes": 400614,
-      "sha256": "17f7db91c4c34dedf41ffaf10303e07f4f575f730cede1a45d9702d14e5f5768"
+      "bytes": 395627,
+      "sha256": "8e49a69dce1d7451f844a5e23bbc78827251987925e23cbf4b5d4e47596a8862"
     },
     {
       "path": "docs/centralized-sso/images/07_logout_sequence.png",
-      "bytes": 229559,
-      "sha256": "709503b8545a7ccfccf6201aaa9c45753d3240ab2fc6765a56eaebcaa4734dba"
+      "bytes": 187247,
+      "sha256": "1a72132d74832a031204464f44ab9f876e500f552aa57f7fae6595eee3a296d6"
     },
     {
       "path": "docs/centralized-sso/svg/01_secure_access_architecture.svg",
-      "bytes": 168927,
-      "sha256": "7766a98534c8de7e87336d4a98fcf179618aae5fa5654fc59eeadc72cb1c7625"
+      "bytes": 148595,
+      "sha256": "042b8300356724b6af409fc7e5e55972442d3049d945fb10718d78722ab9b322"
     },
     {
       "path": "docs/centralized-sso/svg/02_sso_login_sequence.svg",
-      "bytes": 126995,
-      "sha256": "1f3c76cbd5e86cba9d64c25bcad9d5b77f30c6de61953572ddde58b3e7358da4"
+      "bytes": 104401,
+      "sha256": "417cb20ac9456689f63ba663a13c18a5ec1803ab622ddfa6019712429fb879da"
     },
     {
       "path": "docs/centralized-sso/svg/03_token_relay_sequence.svg",
-      "bytes": 129753,
-      "sha256": "bcf19e134e899ad9b28657ce7713cbfc94ac36830136406ab9cf0829962bb514"
+      "bytes": 107835,
+      "sha256": "bd6f77c264f396fcfd14344189bb8c9c2019e7d49c59ccd9435c7c33ee653c00"
     },
     {
       "path": "docs/centralized-sso/svg/04_distributed_bff_sessions.svg",
-      "bytes": 131862,
-      "sha256": "55672af798b52dce74dc44d2b4022b69ce82b6b0a85a14f8fdfe2a748c27f900"
+      "bytes": 105437,
+      "sha256": "6b194cef7263ee08186759e19d4dce00accf4044414e3c5d7ef90ae37c3cf179"
     },
     {
       "path": "docs/centralized-sso/svg/05_token_refresh_sequence.svg",
-      "bytes": 123559,
-      "sha256": "c2d49cb7a2b93afb8b50d27f277d96ed996df399a3f5d32ecb261e6671fca1f3"
+      "bytes": 96489,
+      "sha256": "d1236410e52467c5af79d3713d0ac21315bc1b74ab2245e8d336f0f36ceb2dcb"
     },
     {
       "path": "docs/centralized-sso/svg/06_request_activity_and_denials.svg",
-      "bytes": 144307,
-      "sha256": "533450c64fcac44359173b073f1abca1195f474aa2d2fa8d2951bec926e2f2b2"
+      "bytes": 122668,
+      "sha256": "09e0a17c6ef798cc3842834feb20e472f40516e8e6b24e4a75354951454d3136"
     },
     {
       "path": "docs/centralized-sso/svg/07_logout_sequence.svg",
-      "bytes": 118615,
-      "sha256": "859464f2e0e1c9698ee6be1d102dc5e0fbc21857bedd0e8a224c8d4babf880fa"
+      "bytes": 100424,
+      "sha256": "63399c2baebe21874f931e4591286984753b28f0eac8bea5c305aaac48414766"
     },
     {
       "path": "docs/eks-bff/AOBP_BFF_Architecture_Design.md",
-      "bytes": 42173,
-      "sha256": "705e8a3d5c24dae0f1720e078ef34f6f82d565217c3fd89ca7236f60d0157074"
+      "bytes": 44735,
+      "sha256": "134ac98c3befa2854fc892bd3ec5b0882b5bc022f3f1624cee998c98483c5d21"
     },
     {
       "path": "docs/eks-bff/AOBP_BFF_Architecture_Design.pdf",
-      "bytes": 1002846,
-      "sha256": "3a61eac3f855b9ceb4cc4ea662d4135ac202bfb29cfd1f2a8ab976c27b2a27ee"
+      "bytes": 1990229,
+      "sha256": "a6e4b4896ab6075a143d3210817f4f54adea0ae1dc29c9c679cc2290cec956a1"
     },
     {
       "path": "docs/eks-bff/diagrams/01_secure_access_architecture.png",
-      "bytes": 174801,
-      "sha256": "7326cd31feaa8c626aaf3f7d9e268410180a77361d07689a6a922cab71bf4975"
+      "bytes": 363105,
+      "sha256": "9e8b0865ec6fff4766c90906b323269396869a2a8d04a820d5305a0aae975bc8"
     },
     {
       "path": "docs/eks-bff/diagrams/02_sso_login_flow.png",
-      "bytes": 114815,
-      "sha256": "7d3c559eef1c15aaddf17b339e46baa2a759af7d755c87660ab72f726443eb57"
+      "bytes": 226735,
+      "sha256": "1d53ed3f24999d116f6ceee104be17dec17e27d6cf6d4340e3986d6842b669f4"
     },
     {
       "path": "docs/eks-bff/diagrams/03_business_request.png",
-      "bytes": 118960,
-      "sha256": "5012dc05f36fe8185159ae7a82b9ad89ae04f6dc28099fe64ed613cee384f680"
+      "bytes": 215259,
+      "sha256": "4373e1af4d9b0d2da7517d03ad75bfe35c32a553642e8f9b3e1fd87b0f092fe7"
     },
     {
       "path": "docs/eks-bff/diagrams/04_distributed_bff_refresh.png",
-      "bytes": 100861,
-      "sha256": "075afccdd9f7e7483e277fd28d5e12426304d8899ec3e3b0fa7a140259cf1d8f"
+      "bytes": 190394,
+      "sha256": "6bb6efaa3aa518b80a602764211692859fa3f6283338441f36fab4102d7ef127"
     },
     {
       "path": "docs/eks-bff/diagrams/05_eks_deployment.png",
-      "bytes": 136023,
-      "sha256": "2bc94059c29d1624ecec5324b3539bde84d51a1e2f2779e7078a211b95700db8"
+      "bytes": 291494,
+      "sha256": "2de948b8691bb6c8bfb7303ecd9a6e4687ee2c32bdd019643db37580d726660f"
     },
     {
       "path": "docs/eks-bff/diagrams/06_attack_points.png",
-      "bytes": 147405,
-      "sha256": "9e70fcea2af796cbc31e605649025e1faa1d6167999710a0e5dce74508285e89"
+      "bytes": 321295,
+      "sha256": "2b4fc3dbb1c9833501b9afb9586f1a5c06b98188226a7d23a60f7e96727dbb14"
     },
     {
       "path": "docs/platform/AOBP_Platform_Architecture_Design.md",
-      "bytes": 130856,
-      "sha256": "047d6a726b6f3fa6e479c0f9c06060640c464dd0a0a943bb29938295fc36629b"
+      "bytes": 135445,
+      "sha256": "f24560e7a283a201eedac64a2534787c598f4e04684d43c58f2cafd8163aaa32"
     },
     {
       "path": "docs/platform/AOBP_Platform_Architecture_Design.pdf",
-      "bytes": 2003231,
-      "sha256": "07d7406a351a00bd71f928b76dbeff7ce210477de1bf344e109af1611066f899"
+      "bytes": 2340033,
+      "sha256": "c1fc4ee83680bb581a89169dd0790fc0d40ab6036b9f6d02620987722305f646"
     },
     {
       "path": "docs/platform/README.txt",
@@ -193,48 +228,48 @@
     },
     {
       "path": "docs/platform/assets/01_secure_access_architecture.png",
-      "bytes": 287240,
-      "sha256": "70eb1b6d43b06871e9705cbb16b62543f4f5cc07bbaa6aa523df32e2e56bfc73"
+      "bytes": 363105,
+      "sha256": "9e8b0865ec6fff4766c90906b323269396869a2a8d04a820d5305a0aae975bc8"
     },
     {
       "path": "docs/platform/assets/02_sso_login_flow.png",
-      "bytes": 216753,
-      "sha256": "b30b62520268fb26ed508bce99e897f5a6c41f04fe95e5f6c5c3a6ac990b3634"
+      "bytes": 226735,
+      "sha256": "1d53ed3f24999d116f6ceee104be17dec17e27d6cf6d4340e3986d6842b669f4"
     },
     {
       "path": "docs/platform/assets/03_business_request.png",
-      "bytes": 194785,
-      "sha256": "bbee5c38eaebb07df14e628439d81c9321f35e20222f367d70ee90edb60ffde7"
+      "bytes": 215259,
+      "sha256": "4373e1af4d9b0d2da7517d03ad75bfe35c32a553642e8f9b3e1fd87b0f092fe7"
     },
     {
       "path": "docs/platform/assets/04_distributed_bff_refresh.png",
-      "bytes": 176740,
-      "sha256": "e66a6f4a8e6f381f4208a6ea4dbdd39dea300edfdbc2b8e2d64f32efcc51c77f"
+      "bytes": 190394,
+      "sha256": "6bb6efaa3aa518b80a602764211692859fa3f6283338441f36fab4102d7ef127"
     },
     {
       "path": "docs/platform/assets/05_eks_deployment.png",
-      "bytes": 238865,
-      "sha256": "5c8aeba823d8691a19c6dfab5ad9fe926adfcc3ba2f914b49ec628ae1258666e"
+      "bytes": 291494,
+      "sha256": "2de948b8691bb6c8bfb7303ecd9a6e4687ee2c32bdd019643db37580d726660f"
     },
     {
       "path": "docs/platform/assets/06_partner_integration.png",
-      "bytes": 178143,
-      "sha256": "31191ada2ca0b6924b643d078319f4fdaee90c691613d10129b77326653302d2"
+      "bytes": 218637,
+      "sha256": "1514d1180da6ae5a1aa80941260ff4a753fdceae9a3b1c847fdf536f688afdb7"
     },
     {
       "path": "docs/platform/assets/07_security_boundaries.png",
-      "bytes": 302441,
-      "sha256": "8d9055629824084bbfe3c69f9c60ad43055c64ae8a0d0112ae2af365d6edcbc3"
+      "bytes": 321295,
+      "sha256": "2b4fc3dbb1c9833501b9afb9586f1a5c06b98188226a7d23a60f7e96727dbb14"
     },
     {
       "path": "docs/platform/scripts/build_pdf.py",
-      "bytes": 9280,
-      "sha256": "aa7402045fb08375ccbfac942af5c1b95a85a21de00488cfcfca014c7ef3846a"
+      "bytes": 166,
+      "sha256": "8a9b12df15d4b59f59ac4987b3f0a0d5c7f8b9593c46a0049e9c118ae660d2ec"
     },
     {
       "path": "docs/platform/scripts/diagrams.py",
-      "bytes": 14196,
-      "sha256": "35a494017841aab3b088bbcd7a13f575954f099b001a6b4b14bcce51f75067df"
+      "bytes": 170,
+      "sha256": "3a3ffe41c52778bb980f17ecdf466b5a3d427f05f64c2960e5de6b4218155474"
     },
     {
       "path": "docs/workflow/AODB_FLIGHT_DELAY_APPROVAL_STEP_BY_STEP_GUIDE.md",
@@ -243,18 +278,18 @@
     },
     {
       "path": "downloads/AOBP_Architecture_Document_and_PNGs.zip",
-      "bytes": 2909315,
-      "sha256": "bcd50cdb1e9ae2ad532ee75051fbf334b61620d4724faf2b702651f5ed162835"
+      "bytes": 3197981,
+      "sha256": "ff947ae1c1cccde50b2c76587a701c2c4aa5291f1239f0b853270bcbe8d684f8"
     },
     {
       "path": "downloads/AOBP_BFF_Architecture_Markdown_and_Diagrams.zip",
-      "bytes": 1872077,
-      "sha256": "3b0e8de5888bf591b6f1dc0e559bb860b4f8793e5d6448087c1427e5f9f2fb12"
+      "bytes": 3222448,
+      "sha256": "42e0d78e9d3d2329cf0897675eacbdb83938c52861a961e6e6c63d851ff5812c"
     },
     {
       "path": "downloads/AOBP_BFF_Architecture_Package.zip",
-      "bytes": 1426305,
-      "sha256": "48ffc58a5ed608f9f5b164cbecf5b47031521a73e080b6d87162fb531d2e22d6"
+      "bytes": 2744658,
+      "sha256": "e4732ca457fa4c8bf2b734806f2b8ca41e8db99ae0aab087f2a3d2a27633aacf"
     },
     {
       "path": "reference/AOBP_Architecture_Implementation_Specification.docx",
@@ -265,6 +300,21 @@
       "path": "reference/AOBP_Centralized_SSO_Authentication.pdf",
       "bytes": 760202,
       "sha256": "7948d3b7eb2ecd33066e9fa5b78b6cc95926274a7d921b00ed8989f2c9ba299b"
+    },
+    {
+      "path": "tools/build_diagrams.py",
+      "bytes": 5701,
+      "sha256": "aa6302be151a9ef5b656e3c91a5e2b54496b7812f1511e8c76b0fb22ea24405c"
+    },
+    {
+      "path": "tools/build_pdfs.py",
+      "bytes": 5197,
+      "sha256": "cdd89b907fe65c46c8bf514e41a2ee4e7142af5e6eef5b0e1f127eda069d10cd"
+    },
+    {
+      "path": "tools/diagram_shapes.py",
+      "bytes": 10657,
+      "sha256": "8f135264f0b830d11f388c84dc3e72d8cd67defb8a833772f2d13aaea78690e1"
     }
   ]
 }

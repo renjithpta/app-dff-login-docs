@@ -2,18 +2,17 @@ sequenceDiagram
     autonumber
     participant P0 as Browser
     participant P1 as BFF
-    participant P2 as Private gateway
-    participant P3 as Microservice 1
-    participant P4 as Security Service
+    participant P2 as Microservice 1
+    participant P3 as Business DB
     P0->>P1: Cookie and CSRF
     P1->>P1: Validate session
     P1->>P2: Bearer request
-    P2->>P4: Operation RBAC
-    P4->>P2: Allow / deny
-    P2->>P3: Relay bearer
-    P3->>P3: Validate JWT
-    P3->>P4: Resource ABAC
-    P4->>P3: Allow / deny
-    P3->>P3: Commit and audit
-    P3->>P1: Response via gateway
-    P1->>P0: Business JSON
+    P2->>P2: JWT and freshness
+    P2->>P2: Local RBAC
+    P2->>P3: Read resource scope
+    P3-->>P2: Scope and version
+    P2->>P2: Local ABAC
+    P2->>P3: Commit and audit
+    P3-->>P2: Committed result
+    P2-->>P1: Business response
+    P1-->>P0: Business JSON

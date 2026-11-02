@@ -1,0 +1,20 @@
+@startuml
+skinparam shadowing false
+skinparam ParticipantBackgroundColor #FFF0A8
+skinparam ActivationBackgroundColor #FFF6D2
+skinparam ArrowColor #484334
+autonumber
+participant "BFF replica 1" as P0
+participant "Redis" as P1
+participant "BFF replica 2" as P2
+participant "Identity Provider" as P3
+P0 -> P1: Acquire lease
+P2 -> P1: Wait for owner
+P0 -> P1: Re-read version
+P0 -> P3: Refresh exchange
+P3 --> P0: New token pair
+P0 -> P1: Fenced token write
+P0 -> P1: Owner release
+P2 -> P1: Load new version
+P2 -> P2: Relay new access token
+@enduml
