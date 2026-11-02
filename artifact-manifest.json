@@ -1,0 +1,270 @@
+{
+  "description": "Content inventory excluding the inventory files themselves",
+  "artifacts": [
+    {
+      "path": ".gitattributes",
+      "bytes": 142,
+      "sha256": "2f7c604d69578bf74feb5379ba72f8b19f392e857686945d7f396494cb257c16"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 29,
+      "sha256": "60c9bdd905fcf45ac485c680d32e9773962cf061b6f041dcddd033911558a672"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3849,
+      "sha256": "6bed7b7894fe7eb9f874eddf97e2df791ee280e58d62d49daeda697894c72843"
+    },
+    {
+      "path": "docs/centralized-sso/AOBP_BFF_Centralized_SSO_Architecture.md",
+      "bytes": 50499,
+      "sha256": "a26acc3bbc6344625740bcb55af071cac3a6299f0356160665aff73cc17ab50c"
+    },
+    {
+      "path": "docs/centralized-sso/AOBP_BFF_Centralized_SSO_Architecture.pdf",
+      "bytes": 139588,
+      "sha256": "7c634d66f85c1eabc940bd3d214d69df0a2d6aa60c8db0dabfcf9d5dff3da1bd"
+    },
+    {
+      "path": "docs/centralized-sso/README.md",
+      "bytes": 891,
+      "sha256": "10d25da33721be130b0d7b6a35011ec47666c29d013ffe8733d0c4d0654e64af"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/01_secure_access_architecture.mmd",
+      "bytes": 705,
+      "sha256": "e7fb260decbf7e540a6fafdcbcaf8a2db2eecee0c9f592a2919e7f96604a2040"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/02_sso_login_sequence.mmd",
+      "bytes": 544,
+      "sha256": "da02bf77cb6f9011a04418fff0453799d483dc53950d701f9e90898e2d883507"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/03_token_relay_sequence.mmd",
+      "bytes": 538,
+      "sha256": "857433705572db487fb1460639b54a0ce328a9462fab4e16245c2319213fac6f"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/04_distributed_bff_sessions.mmd",
+      "bytes": 519,
+      "sha256": "19c347d9496e0262a0b5b90195849ce508afe4b69285b61973982ee148bae2e4"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/05_token_refresh_sequence.mmd",
+      "bytes": 438,
+      "sha256": "4b499b68d82105c1392b7411c1f577133d90d173e6b411260da2c2637647e714"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/06_request_activity_and_denials.mmd",
+      "bytes": 502,
+      "sha256": "4655efa9efaafdd2f7e2b28f398fada4faa3cc9de04c2965d6f067aa8949ab9e"
+    },
+    {
+      "path": "docs/centralized-sso/diagram-source/07_logout_sequence.mmd",
+      "bytes": 444,
+      "sha256": "46168d87d44c3880b6bf89da3644244b86a7698518a4d6096ec786ce2291a026"
+    },
+    {
+      "path": "docs/centralized-sso/images/01_secure_access_architecture.png",
+      "bytes": 405247,
+      "sha256": "0f55cd20c83d6f3371b8923a9bae45f795c525ecc956237085ba0b0e314e77d0"
+    },
+    {
+      "path": "docs/centralized-sso/images/02_sso_login_sequence.png",
+      "bytes": 265461,
+      "sha256": "c1e228ad866b6dfb62efae3880b32a6929462a811b3d61d3740a566942d263e0"
+    },
+    {
+      "path": "docs/centralized-sso/images/03_token_relay_sequence.png",
+      "bytes": 267971,
+      "sha256": "de00d3b1ff4d1d6286cbe9b52596f3ab1bffbc9a334ef139b485e4eda0ee32f8"
+    },
+    {
+      "path": "docs/centralized-sso/images/04_distributed_bff_sessions.png",
+      "bytes": 254829,
+      "sha256": "86f67f049af421ad1db75ae13df6b9125f43f4f6285a44998e6429f1fd941e54"
+    },
+    {
+      "path": "docs/centralized-sso/images/05_token_refresh_sequence.png",
+      "bytes": 236361,
+      "sha256": "0f6ec15ad32c792af03e43d100c3583ab7806a2b7718f862796820e56ec1780a"
+    },
+    {
+      "path": "docs/centralized-sso/images/06_request_activity_and_denials.png",
+      "bytes": 400614,
+      "sha256": "17f7db91c4c34dedf41ffaf10303e07f4f575f730cede1a45d9702d14e5f5768"
+    },
+    {
+      "path": "docs/centralized-sso/images/07_logout_sequence.png",
+      "bytes": 229559,
+      "sha256": "709503b8545a7ccfccf6201aaa9c45753d3240ab2fc6765a56eaebcaa4734dba"
+    },
+    {
+      "path": "docs/centralized-sso/svg/01_secure_access_architecture.svg",
+      "bytes": 168927,
+      "sha256": "7766a98534c8de7e87336d4a98fcf179618aae5fa5654fc59eeadc72cb1c7625"
+    },
+    {
+      "path": "docs/centralized-sso/svg/02_sso_login_sequence.svg",
+      "bytes": 126995,
+      "sha256": "1f3c76cbd5e86cba9d64c25bcad9d5b77f30c6de61953572ddde58b3e7358da4"
+    },
+    {
+      "path": "docs/centralized-sso/svg/03_token_relay_sequence.svg",
+      "bytes": 129753,
+      "sha256": "bcf19e134e899ad9b28657ce7713cbfc94ac36830136406ab9cf0829962bb514"
+    },
+    {
+      "path": "docs/centralized-sso/svg/04_distributed_bff_sessions.svg",
+      "bytes": 131862,
+      "sha256": "55672af798b52dce74dc44d2b4022b69ce82b6b0a85a14f8fdfe2a748c27f900"
+    },
+    {
+      "path": "docs/centralized-sso/svg/05_token_refresh_sequence.svg",
+      "bytes": 123559,
+      "sha256": "c2d49cb7a2b93afb8b50d27f277d96ed996df399a3f5d32ecb261e6671fca1f3"
+    },
+    {
+      "path": "docs/centralized-sso/svg/06_request_activity_and_denials.svg",
+      "bytes": 144307,
+      "sha256": "533450c64fcac44359173b073f1abca1195f474aa2d2fa8d2951bec926e2f2b2"
+    },
+    {
+      "path": "docs/centralized-sso/svg/07_logout_sequence.svg",
+      "bytes": 118615,
+      "sha256": "859464f2e0e1c9698ee6be1d102dc5e0fbc21857bedd0e8a224c8d4babf880fa"
+    },
+    {
+      "path": "docs/eks-bff/AOBP_BFF_Architecture_Design.md",
+      "bytes": 42173,
+      "sha256": "705e8a3d5c24dae0f1720e078ef34f6f82d565217c3fd89ca7236f60d0157074"
+    },
+    {
+      "path": "docs/eks-bff/AOBP_BFF_Architecture_Design.pdf",
+      "bytes": 1002846,
+      "sha256": "3a61eac3f855b9ceb4cc4ea662d4135ac202bfb29cfd1f2a8ab976c27b2a27ee"
+    },
+    {
+      "path": "docs/eks-bff/diagrams/01_secure_access_architecture.png",
+      "bytes": 174801,
+      "sha256": "7326cd31feaa8c626aaf3f7d9e268410180a77361d07689a6a922cab71bf4975"
+    },
+    {
+      "path": "docs/eks-bff/diagrams/02_sso_login_flow.png",
+      "bytes": 114815,
+      "sha256": "7d3c559eef1c15aaddf17b339e46baa2a759af7d755c87660ab72f726443eb57"
+    },
+    {
+      "path": "docs/eks-bff/diagrams/03_business_request.png",
+      "bytes": 118960,
+      "sha256": "5012dc05f36fe8185159ae7a82b9ad89ae04f6dc28099fe64ed613cee384f680"
+    },
+    {
+      "path": "docs/eks-bff/diagrams/04_distributed_bff_refresh.png",
+      "bytes": 100861,
+      "sha256": "075afccdd9f7e7483e277fd28d5e12426304d8899ec3e3b0fa7a140259cf1d8f"
+    },
+    {
+      "path": "docs/eks-bff/diagrams/05_eks_deployment.png",
+      "bytes": 136023,
+      "sha256": "2bc94059c29d1624ecec5324b3539bde84d51a1e2f2779e7078a211b95700db8"
+    },
+    {
+      "path": "docs/eks-bff/diagrams/06_attack_points.png",
+      "bytes": 147405,
+      "sha256": "9e70fcea2af796cbc31e605649025e1faa1d6167999710a0e5dce74508285e89"
+    },
+    {
+      "path": "docs/platform/AOBP_Platform_Architecture_Design.md",
+      "bytes": 130856,
+      "sha256": "047d6a726b6f3fa6e479c0f9c06060640c464dd0a0a943bb29938295fc36629b"
+    },
+    {
+      "path": "docs/platform/AOBP_Platform_Architecture_Design.pdf",
+      "bytes": 2003231,
+      "sha256": "07d7406a351a00bd71f928b76dbeff7ce210477de1bf344e109af1611066f899"
+    },
+    {
+      "path": "docs/platform/README.txt",
+      "bytes": 1166,
+      "sha256": "e68d01337941970beab9ce3ac696c63670cad248b955df4329301922d750adae"
+    },
+    {
+      "path": "docs/platform/assets/01_secure_access_architecture.png",
+      "bytes": 287240,
+      "sha256": "70eb1b6d43b06871e9705cbb16b62543f4f5cc07bbaa6aa523df32e2e56bfc73"
+    },
+    {
+      "path": "docs/platform/assets/02_sso_login_flow.png",
+      "bytes": 216753,
+      "sha256": "b30b62520268fb26ed508bce99e897f5a6c41f04fe95e5f6c5c3a6ac990b3634"
+    },
+    {
+      "path": "docs/platform/assets/03_business_request.png",
+      "bytes": 194785,
+      "sha256": "bbee5c38eaebb07df14e628439d81c9321f35e20222f367d70ee90edb60ffde7"
+    },
+    {
+      "path": "docs/platform/assets/04_distributed_bff_refresh.png",
+      "bytes": 176740,
+      "sha256": "e66a6f4a8e6f381f4208a6ea4dbdd39dea300edfdbc2b8e2d64f32efcc51c77f"
+    },
+    {
+      "path": "docs/platform/assets/05_eks_deployment.png",
+      "bytes": 238865,
+      "sha256": "5c8aeba823d8691a19c6dfab5ad9fe926adfcc3ba2f914b49ec628ae1258666e"
+    },
+    {
+      "path": "docs/platform/assets/06_partner_integration.png",
+      "bytes": 178143,
+      "sha256": "31191ada2ca0b6924b643d078319f4fdaee90c691613d10129b77326653302d2"
+    },
+    {
+      "path": "docs/platform/assets/07_security_boundaries.png",
+      "bytes": 302441,
+      "sha256": "8d9055629824084bbfe3c69f9c60ad43055c64ae8a0d0112ae2af365d6edcbc3"
+    },
+    {
+      "path": "docs/platform/scripts/build_pdf.py",
+      "bytes": 9280,
+      "sha256": "aa7402045fb08375ccbfac942af5c1b95a85a21de00488cfcfca014c7ef3846a"
+    },
+    {
+      "path": "docs/platform/scripts/diagrams.py",
+      "bytes": 14196,
+      "sha256": "35a494017841aab3b088bbcd7a13f575954f099b001a6b4b14bcce51f75067df"
+    },
+    {
+      "path": "docs/workflow/AODB_FLIGHT_DELAY_APPROVAL_STEP_BY_STEP_GUIDE.md",
+      "bytes": 56089,
+      "sha256": "ffe4d9cd1d7c7d302f5e9fdedcc73abb0e6dfc4f0c46334aef90f305f99d416d"
+    },
+    {
+      "path": "downloads/AOBP_Architecture_Document_and_PNGs.zip",
+      "bytes": 2909315,
+      "sha256": "bcd50cdb1e9ae2ad532ee75051fbf334b61620d4724faf2b702651f5ed162835"
+    },
+    {
+      "path": "downloads/AOBP_BFF_Architecture_Markdown_and_Diagrams.zip",
+      "bytes": 1872077,
+      "sha256": "3b0e8de5888bf591b6f1dc0e559bb860b4f8793e5d6448087c1427e5f9f2fb12"
+    },
+    {
+      "path": "downloads/AOBP_BFF_Architecture_Package.zip",
+      "bytes": 1426305,
+      "sha256": "48ffc58a5ed608f9f5b164cbecf5b47031521a73e080b6d87162fb531d2e22d6"
+    },
+    {
+      "path": "reference/AOBP_Architecture_Implementation_Specification.docx",
+      "bytes": 170406,
+      "sha256": "5c3d06f7a80f1f1e5cac133411ffa95fa5d9f9f70b73e59e3d8392e19adf3c59"
+    },
+    {
+      "path": "reference/AOBP_Centralized_SSO_Authentication.pdf",
+      "bytes": 760202,
+      "sha256": "7948d3b7eb2ecd33066e9fa5b78b6cc95926274a7d921b00ed8989f2c9ba299b"
+    }
+  ]
+}

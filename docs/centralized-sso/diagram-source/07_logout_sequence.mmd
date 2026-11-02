@@ -1,0 +1,14 @@
+sequenceDiagram
+    autonumber
+    participant P0 as Browser
+    participant P1 as BFF replica
+    participant P2 as Redis
+    participant P3 as Identity Provider
+    P0->>P1: POST logout and CSRF
+    P1->>P2: Invalidate shared session
+    P1->>P2: Delete token record
+    P1->>P0: Clear cookie; return logout URL
+    P0->>P3: Top-level OIDC logout
+    P3->>P0: Return to registered UI
+    P0->>P1: GET session
+    P1->>P0: 401 unauthenticated

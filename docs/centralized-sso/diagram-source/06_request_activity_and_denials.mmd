@@ -1,0 +1,14 @@
+flowchart TD
+  A["Receive browser API request"] --> B{"Session valid?"}
+  B -->|No| B0["401 sign in"]
+  B -->|Yes| C{"CSRF valid if required?"}
+  C -->|No| C0["403 no relay"]
+  C -->|Yes| D{"Token ready after refresh if needed?"}
+  D -->|No| D0["401 or 503"]
+  D -->|Yes| E{"JWT valid?"}
+  E -->|No| E0["401 no work"]
+  E -->|Yes| F{"RBAC allow?"}
+  F -->|No| F0["403 no work"]
+  F -->|Yes| G{"ABAC allow?"}
+  G -->|No| G0["403 or concealed 404"]
+  G -->|Yes| H["Validate input then commit and audit"]
